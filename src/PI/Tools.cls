@@ -97,6 +97,9 @@ ClassMethod History(recordId As %String) As %DynamicObject
 ClassMethod Compare(candidateId As %String) As %DynamicObject
 {
     set c=..Context(),r=..Candidate(c,candidateId),data=##class(PI.Rules).Compare(c.incoming,r)
+    // Execute Embedded Python only while collecting evidence; readonly HTTP/MCP views replay the persisted result.
+    set data.nameSimilarity=##class(PI.IdentitySimilarity).CompareNames(c.incoming.name,r.name)
+    set data.incomingSourceVersion=c.incoming.sourceVersion,data.candidateSourceVersion=r.sourceVersion
     set data.candidateId=candidateId
     quit ..Evidence(c,"compare_identity_fields",data)
 }

@@ -139,10 +139,10 @@ ClassMethod Budget()
     try { set z=##class(PI.Agent).Reserve() } catch ex { set bad=(ex.Name="BUDGET_LIMIT") }
     do ..Assert(bad,"third concurrent run cannot exceed budget")
     do ##class(PI.Agent).Settle(a,{"total_prompt_tokens":1000,"total_completion_tokens":1000})
-    do ..Assert(^PIBudget($namespace,"reservedCny")=15,"one reservation remains")
-    do ..Assert(^PIBudget($namespace,"spentCny")=0.08,"full-price conservative usage counted")
+    do ..Assert(^PIBudget($namespace,"reservedUsd")=1.5,"one dollar reservation remains")
+    do ..Assert(^PIBudget($namespace,"spentUsd")=0.008,"full-price conservative dollar usage counted")
     do ##class(PI.Agent).Settle(a,{"total_prompt_tokens":1000,"total_completion_tokens":1000})
-    do ..Assert(^PIBudget($namespace,"reservedCny")=15,"settlement is idempotent")
+    do ..Assert(^PIBudget($namespace,"reservedUsd")=1.5,"settlement is idempotent")
     kill ^PIBudget($namespace)
     write "BUDGET_TESTS_OK",!
 }

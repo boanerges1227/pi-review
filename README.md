@@ -130,6 +130,8 @@ The MCP dashboard displays bounded observations from recorded calls and the Prod
 - Native `%AI.Agent` and persistent sessions; the next investigation can resume a prior session with fresh case evidence.
 - `%AI.ToolMgr` and authorization policies constrain tools to the current case, source version and run.
 - Native embeddings, vector store and knowledge base retrieve synthetic governance rules with evidence provenance.
+- Embedded Python adds supporting name-similarity evidence during candidate comparison; exact identifier conflicts still prohibit association. Readonly views replay the persisted result.
+- Native Workflow Engine tasks pass through Production, with explicit reviewer membership, task claiming, snapshot checks and recoverable post-commit completion.
 - Config Store and Wallet manage model profiles and secrets; model and endpoint can be configured in the settings page.
 - IRIS-native MCP source tools verify source records and support idempotent enrichment requests. Separate USER and PITEST endpoints use distinct signing keys, a bearer credential and bounded capability scopes.
 - A second native MCP service publishes readonly case, evidence and run-trace tools with per-case access control. The workbench includes an MCP dashboard and token management.
@@ -180,13 +182,13 @@ The first bootstrap downloads a pinned public `Qdrant/all-MiniLM-L6-v2-onnx` emb
 
 ## Configure a model
 
-For first-time bootstrap, set `PI_API_KEY`, `PI_BASE_URL`, `PI_MODEL` and `PI_LIVE_ENABLED=1` in the ignored `.env` file, or configure a profile through the settings page. Once the default configuration exists, bootstrap does not overwrite it from `.env`; use the settings page for later endpoint, model or key changes. `PI_LIVE_ENABLED` is a container environment setting, so rerun bootstrap after changing it. Do not commit `.env`, generated Wallet files or client tokens. The project uses a local CNY 30 evaluation budget and conservative estimated pricing; this is a demo limit, not a provider billing guarantee. Review actual provider charges and rates before running live investigations.
+For first-time bootstrap, set `PI_API_KEY`, `PI_BASE_URL`, `PI_MODEL` and `PI_LIVE_ENABLED=1` in the ignored `.env` file, or configure a profile through the settings page. Once the default configuration exists, bootstrap does not overwrite it from `.env`; use the settings page for later endpoint, model or key changes. `PI_LIVE_ENABLED` is a container environment setting, so rerun bootstrap after changing it. Do not commit `.env`, generated Wallet files or client tokens. The project uses a local USD 3 evaluation budget and conservative estimated pricing; this is a demo limit, not a provider billing guarantee. Review actual provider charges and rates before running live investigations.
 
 ## Demonstration
 
 1. Sign in and select **Load demo cases**. This creates synthetic cases without calling a model.
 2. Investigate the spelling discrepancy and inspect source verification, governance evidence and the recommendation.
-3. Review the recommendation and confirm or reject it as a human. The workbench records the decision and supports undo with a reason.
+3. Click **Claim review task**, then review the recommendation and confirm or reject it as a human. The default local workflow reviewer is the existing `_SYSTEM` identity. The workbench records the decision and supports undo with a reason; source changes invalidate older tasks.
 4. Investigate a case with missing fields, request enrichment, fetch the next simulated source version through native MCP, and investigate again.
 5. Open the MCP dashboard to inspect recorded source and publisher observations and call traces.
 

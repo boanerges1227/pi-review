@@ -137,7 +137,7 @@ async function load(preferredId) {
   const [data,health]=await Promise.all([api("/identity/model-settings"),api("/identity/health")]);catalog=data;
   $("provider").replaceChildren();for(const p of catalog.presets){const option=node("option",p.name);option.value=p.id;$("provider").append(option);}
   const active=catalog.profiles.find(p=>p.id===catalog.activeId);$("active-summary").textContent=`Active: ${active?.label||"None"} · ${active?.model||"No model configured"}`;
-  $("settings-budget").textContent=`Estimate ¥${Number(health.knownEstimateCny||0).toFixed(2)} + unknown allowance ¥${Number(health.unknownUsageCny||0).toFixed(2)} / ¥${health.budgetCny||30}`;
+  $("settings-budget").textContent=`Estimate US$${Number(health.knownEstimateUsd||0).toFixed(6)} + unknown allowance US$${Number(health.unknownUsageUsd||0).toFixed(2)} / US$${Number(health.budgetUsd??3).toFixed(2)}`;
   const wasBusy=busy;busy=false;showProfile(catalog.profiles.find(p=>p.id===(preferredId||catalog.activeId))||null);busy=wasBusy;
 }
 

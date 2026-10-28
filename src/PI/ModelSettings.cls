@@ -100,6 +100,7 @@ ClassMethod ValidateRates(rates As %DynamicObject) As %DynamicObject
 ClassMethod Save(data As %DynamicObject) As %DynamicObject
 {
     do ..RequireAdmin()
+    do ##class(PI.Budget).EnsureUsd()
     set p=..Preset(data.%Get("preset","")),id=data.%Get("id","")
     if id'="" { set fqn=..FQN(id) }
     set label=..Text(data.%Get("label",""),80),model=..Text(data.%Get("model",""),200),url=..Text(data.%Get("baseURL",""),500),key=..Text(data.%Get("apiKey",""),2048,1)
@@ -109,7 +110,7 @@ ClassMethod Save(data As %DynamicObject) As %DynamicObject
     lock +^PIBudget($namespace,"lock"):3
     if '$test { throw ##class(%Exception.General).%New("MODEL_CONFIG_BUSY") }
     try {
-        if $get(^PIBudget($namespace,"reservedCny"))>0 { throw ##class(%Exception.General).%New("MODEL_CONFIG_BUSY") }
+        if $get(^PIBudget($namespace,"reservedUsd"))>0 { throw ##class(%Exception.General).%New("MODEL_CONFIG_BUSY") }
         set old={},oldRef="",version=0
         if id'="" {
             set old=..Row(id),version=old.version
@@ -170,10 +171,11 @@ ClassMethod WriteNative(fqn As %String, collection As %String, secretName As %St
 ClassMethod Activate(id As %String, version As %Integer) As %DynamicObject
 {
     do ..RequireAdmin()
+    do ##class(PI.Budget).EnsureUsd()
     lock +^PIBudget($namespace,"lock"):3
     if '$test { throw ##class(%Exception.General).%New("MODEL_CONFIG_BUSY") }
     try {
-        if $get(^PIBudget($namespace,"reservedCny"))>0 { throw ##class(%Exception.General).%New("MODEL_CONFIG_BUSY") }
+        if $get(^PIBudget($namespace,"reservedUsd"))>0 { throw ##class(%Exception.General).%New("MODEL_CONFIG_BUSY") }
         set row=..Row(id)
         if row.version'=version { throw ##class(%Exception.General).%New("CONFIG_VERSION_CONFLICT") }
         if 'row.configured { throw ##class(%Exception.General).%New("MODEL_NOT_CONFIGURED") }

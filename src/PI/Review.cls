@@ -1,7 +1,7 @@
 Class PI.Review Extends %RegisteredObject
 {
 /// Validate case and source snapshots under a transaction and lock; reject stale or duplicate human confirmations.
-ClassMethod Decide(caseId As %String, version As %Integer, action As %String, candidateId As %String, reason As %String) As %DynamicObject
+ClassMethod Decide(caseId As %String, version As %Integer, action As %String, candidateId As %String, reason As %String, workflowTaskId As %String = "") As %DynamicObject
 {
     if ($length($zstrip(reason,"<>W"))<3)!($length(reason)>2000) { throw ##class(%Exception.General).%New("REASON_REQUIRED") }
     lock +^PIData($namespace,"lock"):3
@@ -31,6 +31,8 @@ ClassMethod Decide(caseId As %String, version As %Integer, action As %String, ca
         set ^PIData($namespace,"record",c.incomingId)=r.%ToJSON(),^PIData($namespace,"case",caseId)=c.%ToJSON()
         do ##class(PI.Store).Audit(caseId,"HUMAN_"_action,reason)
         set notification=..Notification(caseId,r.masterId,"APPROVAL")
+        // Persist the native completion intent in the same transaction as the mapping, before any deferred response.
+        if workflowTaskId'="" { set ^PIData($namespace,"workflowCompletion",workflowTaskId)={"caseId":(caseId),"action":(action),"version":(c.version)}.%ToJSON() }
         tcommit
     } catch ex {
         if $tlevel { trollback }

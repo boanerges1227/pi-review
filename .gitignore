@@ -7,3 +7,13 @@ artifacts/
 WORKLOG.md
 
 AGENTS.md
+.vscode/
+docs/superpowers/
+compose.qnap.yaml
+docs/contest-bonuses.md
+docs/demo-scenarios.md
+docs/demo-video-script.md
+docs/online-demo.md
+docs/articles/
+docs/usd-budget-migration-2026-10-28.md
+docs/qwen-live-validation-2026-10-28.md

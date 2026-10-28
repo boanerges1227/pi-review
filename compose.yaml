@@ -23,6 +23,7 @@ services:
       HF_HOME: /durable/iris/models
       FASTEMBED_CACHE_DIR: /durable/iris/models/hub
       PI_LIVE_ENABLED: ${PI_LIVE_ENABLED:-0}
+      PI_PUBLIC_ORIGIN: ${PI_PUBLIC_ORIGIN:-}
     volumes:
       - ./src:/workspace/src:ro
       - ./data:/workspace/data:ro

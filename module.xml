@@ -3,7 +3,7 @@
 <Document name="pi-review.ZPM">
 <Module>
   <Name>pi-review</Name>
-  <Version>1.0.0</Version>
+  <Version>1.1.0</Version>
   <Description>Patient Identity Conflict Review Assistant. An InterSystems IRIS interoperability production in which an AI Hub agent investigates synthetic patient identity conflicts, gathers case-scoped source evidence through native MCP tools and a governance knowledge base, and recommends a route for human review. The reviewer keeps control of identity mappings; the agent cannot approve a merge.</Description>
   <Keywords>ai-hub,agent,interoperability,production,mcp,fhir,patient-identity,identity-resolution,empi,rag,vector</Keywords>
   <Author>
@@ -31,27 +31,32 @@
   -->
   <SourcesRoot>src</SourcesRoot>
   <Resource Name="PI.PKG" Directory="." Flags="ck"/>
+  <FileCopy Name="web/" Target="${libdir}pi-review/web/"/>
+  <FileCopy Name="data/" Target="${libdir}pi-review/data/"/>
+  <Invoke Class="PI.PackageSetup" Method="Install" Phase="Activate" When="After" CheckStatus="true">
+    <Arg>${libdir}pi-review/</Arg>
+  </Invoke>
 
   <AfterInstallMessage>
-PI Review ObjectScript classes are now installed.
+PI Review classes, web assets and synthetic source fixtures are installed.
 
-This module does NOT produce a running deployment. The application also needs, all of which
-are provisioned host-side and cannot be expressed in an IPM manifest:
+Prepare these host-side prerequisites before starting the application:
   - the local embedding model for the AI Hub governance knowledge base
   - named Docker volumes holding MCP bearer credentials and gateway TOML configuration
   - iris-mcp-server gateway containers sharing the IRIS network namespace
   - Config Store / Wallet model profile setup
 
-For a working instance use the Docker Compose bootstrap documented in README.md:
+After those prerequisites exist, start the dedicated USER installation with:
 
-  cp .env.example .env &amp;&amp; chmod 600 .env &amp;&amp; bash scripts/bootstrap.sh
+  do ##class(PI.PackageSetup).Start()
+
+For the complete host-side setup use the Docker Compose bootstrap documented in README.md.
 
 Then open http://127.0.0.1:52784/identity/ and sign in with an IRIS administrator account
 holding %Admin_ConfigStore and %Admin_Wallet. Verify with scripts/test.sh.
 
-Note: the static workbench assets (web/) and the synthetic source registry
-(data/source-registry.json) are read from /workspace at runtime and are supplied by the
-repository checkout or the Compose bind mounts, not by this module.
+Runtime web and source fixture paths resolve from the installed package resource root;
+the application does not require a /workspace source checkout after package installation.
   </AfterInstallMessage>
 </Module>
 </Document>

@@ -2,47 +2,49 @@ Class PI.Agent Extends %RegisteredObject
 {
 Parameter DEADLINE = 120;
 
-/// Prefer reserving CNY 15 per investigation; include settled conservative estimates within the authorized CNY 30 limit.
-ClassMethod Reserve(amount As %Numeric = 15) As %Integer
+/// Reserve up to USD 1.50 per investigation within the preserved USD 3 evaluation allowance.
+ClassMethod Reserve(amount As %Numeric = 1.5) As %Integer
 {
-    if (amount<10)!(amount>15) { throw ##class(%Exception.General).%New("BUDGET_LIMIT") }
+    do ##class(PI.Budget).EnsureUsd()
+    if (amount<1)!(amount>1.5) { throw ##class(%Exception.General).%New("BUDGET_LIMIT") }
     lock +^PIBudget($namespace,"lock"):3
     if '$test { throw ##class(%Exception.General).%New("BUDGET_BUSY") }
-    if ($get(^PIBudget($namespace,"reservedCny"))+$get(^PIBudget($namespace,"spentCny"))+amount)>30 {
+    if ($get(^PIBudget($namespace,"reservedUsd"))+$get(^PIBudget($namespace,"spentUsd"))+amount)>##class(PI.Budget).#LIMITUSD {
         lock -^PIBudget($namespace,"lock")
         throw ##class(%Exception.General).%New("BUDGET_LIMIT")
     }
     set id=$increment(^PIBudget($namespace,"seq")),^PIBudget($namespace,"reservation",id)="OPEN"
     set ^PIBudget($namespace,"reservation",id,"amount")=amount
-    set ^PIBudget($namespace,"reservedCny")=$get(^PIBudget($namespace,"reservedCny"))+amount
+    set ^PIBudget($namespace,"reservedUsd")=$get(^PIBudget($namespace,"reservedUsd"))+amount
     lock -^PIBudget($namespace,"lock")
     quit id
 }
 
-/// Allow use of the remaining authorization, but refuse to start below CNY 10; conservatively charge all unknown usage.
+/// Reserve remaining authorization in USD, refusing to start below USD 1 and conservatively charging unknown usage.
 ClassMethod ReserveAvailable() As %Integer
 {
-    set remaining=30-$get(^PIBudget($namespace,"spentCny"))-$get(^PIBudget($namespace,"reservedCny"))
-    quit ..Reserve($select(remaining<15:remaining,1:15))
+    set budget=##class(PI.Budget).Snapshot(),remaining=budget.budgetUsd-budget.estimatedUsd-budget.reservedUsd
+    quit ..Reserve($select(remaining<1.5:remaining,1:1.5))
 }
 
-/// Settle this round's usage delta at the higher published rates; CNY 10 per USD is a planning assumption, not a live rate or bill.
+/// Settle this round's usage delta directly in USD at the configured per-million-token planning rates.
 ClassMethod Settle(id As %Integer, stats As %DynamicObject, rates As %DynamicObject = "")
 {
+    do ##class(PI.Budget).EnsureUsd()
     lock +^PIBudget($namespace,"lock"):3
     if '$test { throw ##class(%Exception.General).%New("BUDGET_BUSY") }
     if $get(^PIBudget($namespace,"reservation",id))="OPEN" {
         if '$isobject(rates) { set rates={"input":2,"output":6} }
-        set amount=$get(^PIBudget($namespace,"reservation",id,"amount"),15),cost=amount
+        set amount=$get(^PIBudget($namespace,"reservation",id,"amount"),1.5),cost=amount
         if stats.%IsDefined("total_prompt_tokens"),stats.%IsDefined("total_completion_tokens") {
-            set cost=((stats.%Get("total_prompt_tokens")*rates.input)+(stats.%Get("total_completion_tokens")*rates.output))/1000000*10
+            set cost=((stats.%Get("total_prompt_tokens")*rates.input)+(stats.%Get("total_completion_tokens")*rates.output))/1000000
         }
         set unknown='(stats.%IsDefined("total_prompt_tokens")&&stats.%IsDefined("total_completion_tokens"))
         set ^PIBudget($namespace,"reservation",id,"unknownUsage")=unknown
-        if unknown { set ^PIBudget($namespace,"unknownCny")=$get(^PIBudget($namespace,"unknownCny"))+amount }
+        if unknown { set ^PIBudget($namespace,"unknownUsd")=$get(^PIBudget($namespace,"unknownUsd"))+amount }
         set ^PIBudget($namespace,"reservation",id,"settledCost")=cost
-        set ^PIBudget($namespace,"spentCny")=$get(^PIBudget($namespace,"spentCny"))+cost
-        set ^PIBudget($namespace,"reservedCny")=$get(^PIBudget($namespace,"reservedCny"))-amount,^PIBudget($namespace,"reservation",id)="CLOSED"
+        set ^PIBudget($namespace,"spentUsd")=$get(^PIBudget($namespace,"spentUsd"))+cost
+        set ^PIBudget($namespace,"reservedUsd")=$get(^PIBudget($namespace,"reservedUsd"))-amount,^PIBudget($namespace,"reservation",id)="CLOSED"
     }
     lock -^PIBudget($namespace,"lock")
 }
@@ -134,7 +136,7 @@ ClassMethod Worker(caseId As %String, runId As %Integer)
             }
         } catch statsError { set delta={} }
     }
-    // Failed requests may lack complete usage; retain the conservative CNY 15 charge instead of treating missing usage as free.
+    // Failed requests may lack complete usage; retain the conservative USD 1.50 charge instead of treating missing usage as free.
     set billing=$select(result.%Get("error","")="MODEL_OR_TOOL_ERROR":{},1:delta)
     if 'modelStarted { set billing={"total_prompt_tokens":0,"total_completion_tokens":0} }
     if '$isobject(usage) { set usage={} }

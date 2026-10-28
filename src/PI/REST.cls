@@ -40,6 +40,7 @@ XData UrlMap
   <Route Url="/cases/:id/investigate" Method="POST" Call="Investigate"/>
   <Route Url="/cases/:id/enrichment" Method="POST" Call="FetchEnrichment"/>
   <Route Url="/cases/:id/review" Method="POST" Call="Review"/>
+  <Route Url="/cases/:id/claim" Method="POST" Call="ClaimReview"/>
   <Route Url="/cases/:id/undo" Method="POST" Call="Undo"/>
 </Routes>
 }
@@ -95,8 +96,8 @@ ClassMethod Health() As %Status
 {
     set %response.ContentType="application/json"
     set running=##class(Ens.Director).IsProductionRunning()
-    set data={"version":($zversion),"aiHubAvailable":(##class(%Dictionary.ClassDefinition).%ExistsId("%AI.Agent")),"productionRunning":(running),"liveEnabled":($system.Util.GetEnviron("PI_LIVE_ENABLED")="1"),"model":($system.Util.GetEnviron("PI_MODEL")),"reservedCny":($get(^PIBudget($namespace,"reservedCny"),0)),"estimatedCny":($get(^PIBudget($namespace,"spentCny"),0)),"budgetCny":30}
-    set data.unknownUsageCny=$get(^PIBudget($namespace,"unknownCny")),data.knownEstimateCny=data.estimatedCny-data.unknownUsageCny
+    try { set data=##class(PI.Budget).Snapshot() } catch ex { return ..RespondError(ex.Name) }
+    set data.version=$zversion,data.aiHubAvailable=##class(%Dictionary.ClassDefinition).%ExistsId("%AI.Agent"),data.productionRunning=running,data.liveEnabled=($system.Util.GetEnviron("PI_LIVE_ENABLED")="1")
     set data.modelConfig=##class(PI.ModelConfig).Public(),data.model=data.modelConfig.model
     set data.mcp=$select($data(^PIData($namespace,"mcpHealth")):{}.%FromJSON($get(^PIData($namespace,"mcpHealth"))),1:{"status":"NOT_CHECKED","server":"synthetic-source"})
     write data.%ToJSON()
@@ -124,10 +125,15 @@ ClassMethod RespondError(code As %String) As %Status
     if (code="MCP_TOKEN_VERSION_CONFLICT")!(code="MCP_TOKEN_REVOKED") { set status=409 }
     if code="MODEL_CONFIG_SAVE_FAILED" { set status=500 }
     if code="FORBIDDEN" { set status=403 }
+    if code="WORKFLOW_FORBIDDEN" { set status=403 }
+    if $listfind($listfromstring("WORKFLOW_CLAIM_REQUIRED,WORKFLOW_ALREADY_CLAIMED,WORKFLOW_TASK_CLOSED,WORKFLOW_WAITING_FOR_DATA"),code) { set status=409 }
+    if code="WORKFLOW_TASK_PENDING" { set status=503 }
     if (code="ADMIN_AUTHENTICATION_REQUIRED")!(code="ADMIN_LOGIN_FAILED") { set status=401 }
     if code="ADMIN_NEW_SESSION_REQUIRED" { set status=409 }
     if code="ADMIN_PERMISSION_REQUIRED" { set status=403 }
     if (code="BUSY")!(code="PRODUCTION_UNAVAILABLE") { set status=503 }
+    if (code="BUDGET_BUSY")!(code="BUDGET_MIGRATION_BUSY") { set status=503 }
+    if code="BUDGET_CURRENCY_INVALID" { set status=500 }
     if $extract(code,1)="<" { set status=500,code="INTERNAL_ERROR" }
     set %response.Status=status_" "_$select(status=400:"Bad Request",status=401:"Unauthorized",status=403:"Forbidden",status=404:"Not Found",status=409:"Conflict",status=503:"Service Unavailable",1:"Internal Server Error")
     quit ..Json({"code":(code)})
@@ -138,12 +144,20 @@ ClassMethod Body() As %DynamicObject
 {
     if %request.GetCgiEnv("HTTP_X_IDENTITY_REVIEW")'="local-demo" { throw ##class(%Exception.General).%New("FORBIDDEN") }
     set origin=%request.GetCgiEnv("HTTP_ORIGIN"),host=%request.GetCgiEnv("HTTP_HOST")
-    if (origin'="")&&(origin'=("http://"_host)) { throw ##class(%Exception.General).%New("FORBIDDEN") }
+    if '..OriginAllowed(origin,host,$system.Util.GetEnviron("PI_PUBLIC_ORIGIN")) { throw ##class(%Exception.General).%New("FORBIDDEN") }
     if '$isobject(%request.Content) { throw ##class(%Exception.General).%New("INVALID_JSON") }
     if %request.Content.Size>65536 { throw ##class(%Exception.General).%New("INPUT_TOO_LARGE") }
     try { set data={}.%FromJSON(%request.Content) } catch ex { throw ##class(%Exception.General).%New("INVALID_JSON") }
     if 'data.%IsA("%DynamicObject") { throw ##class(%Exception.General).%New("INVALID_INPUT") }
     quit data
+}
+
+/// Accept an exact configured reverse-proxy origin; forwarding headers never grant cross-origin mutation access.
+ClassMethod OriginAllowed(origin As %String, host As %String, publicOrigin As %String = "") As %Boolean
+{
+    if origin="" { quit 1 }
+    if publicOrigin'="" { quit origin=publicOrigin }
+    quit origin=("http://"_host)
 }
 
 /// Send requests through Production and convert business errors to standard HTTP responses.
@@ -167,7 +181,7 @@ ClassMethod Intake() As %Status
 /// Advance timed-out demo enrichment tasks when refreshing the list.
 ClassMethod Cases() As %Status
 {
-    try { do ##class(PI.Route).Expire() set result=##class(PI.Store).List() } catch ex { return ..RespondError(ex.Name) }
+    try { do ##class(PI.Workflow.Bridge).Reconcile() do ##class(PI.Route).Expire() set result=##class(PI.Store).List() } catch ex { return ..RespondError(ex.Name) }
     quit ..Json(result)
 }
 
@@ -196,15 +210,22 @@ ClassMethod Investigate(id As %String) As %Status
 ClassMethod Review(id As %String) As %Status
 {
     try {
-        set b=..Body(),result=##class(PI.Review).Decide(id,b.%Get("version"),b.%Get("action"),b.%Get("candidateId"),b.%Get("reason"))
+        set b=..Body(),result=##class(PI.Workflow.Bridge).Complete(id,b.%Get("version"),b.%Get("action"),b.%Get("candidateId"),b.%Get("reason"))
     } catch ex { return ..RespondError(ex.Name) }
+    quit ..Json(result)
+}
+
+/// Claim a native task for the current authenticated workflow member, never a user supplied actor.
+ClassMethod ClaimReview(id As %String) As %Status
+{
+    try { set b=..Body(),result=##class(PI.Workflow.Bridge).Claim(id,b.%Get("version")) } catch ex { return ..RespondError(ex.Name) }
     quit ..Json(result)
 }
 
 /// Explicitly undo the latest reversible confirmation, subject to version checks.
 ClassMethod Undo(id As %String) As %Status
 {
-    try { set b=..Body(),result=##class(PI.Review).Undo(id,b.%Get("version"),b.%Get("reason")) } catch ex { return ..RespondError(ex.Name) }
+    try { set b=..Body() do ##class(PI.Workflow.Bridge).RequireMember() set result=##class(PI.Review).Undo(id,b.%Get("version"),b.%Get("reason")) } catch ex { return ..RespondError(ex.Name) }
     quit ..Json(result)
 }
 
@@ -222,7 +243,7 @@ ClassMethod Asset(name As %String, mime As %String) As %Status
     do %response.SetHeader("Content-Security-Policy","default-src 'self'; style-src 'self'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'")
     set stream=##class(%Stream.FileCharacter).%New()
     set stream.TranslateTable="UTF8"
-    set sc=stream.LinkToFile("/workspace/web/"_name)
+    set sc=stream.LinkToFile(##class(PI.InstallPaths).WebRoot()_name)
     if $system.Status.IsError(sc) { quit ..RespondError("NOT_FOUND") }
     while 'stream.AtEnd { write stream.Read(32767) }
     quit 1

@@ -7,8 +7,9 @@ web_address=$(docker compose port iris 52773)
 test_address=$(docker compose port iris 52786)
 [[ "$web_address" == 127.0.0.1:* && "$test_address" == 127.0.0.1:* ]] || { printf 'TEST_PORT_INVALID\n' >&2; exit 1; }
 export PI_BASE="http://$web_address" PI_URL="http://$web_address/identity" PI_TEST_MCP_URL="http://$test_address/mcp"
-bash scripts/test.sh
+# Apply Compose changes before starting PITEST; recreating IRIS after unit tests would stop its test Production mid-suite.
 docker compose --profile test up -d mcp-gateway-test
+bash scripts/test.sh
 offline_owner="mcp-offline-$(date +%s)-$$"
 offline_entered=0
 cleanup() {
@@ -34,6 +35,7 @@ printf '%s\n' "$output" | python3 -c 'import sys,re,pathlib; s=sys.stdin.read();
 python3 tests/mcp_acceptance.py
 python3 tests/mcp_token_acceptance.py
 python3 -m unittest discover -s tests -p admin_login_acceptance.py
+python3 -m unittest discover -s tests -p workflow_http_acceptance.py
 # Simulate source unavailability only in PITEST without interrupting the shared USER gateway.
 offline_entered=1
 printf 'TEST_MAINTENANCE_OWNER=%s\n' "$offline_owner"

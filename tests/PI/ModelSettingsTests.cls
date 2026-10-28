@@ -28,9 +28,9 @@ ClassMethod Profiles()
     try { set bad=##class(PI.ModelSettings).Save(input) } catch ex { set denied=(ex.Name="NEW_KEY_REQUIRED") }
     do ..Assert(denied,"changed endpoint cannot silently inherit old key")
     set input.baseURL="https://dashscope-us.aliyuncs.com/compatible-mode/v1",input.version=rotated.version
-    set ^PIBudget($namespace,"reservedCny")=15,denied=0
+    set ^PIBudget($namespace,"reservedUsd")=1.5,denied=0
     try { set bad=##class(PI.ModelSettings).Save(input) } catch ex { set denied=(ex.Name="MODEL_CONFIG_BUSY") }
-    kill ^PIBudget($namespace,"reservedCny")
+    kill ^PIBudget($namespace,"reservedUsd")
     do ..Assert(denied,"in-flight investigation blocks profile mutation")
     set chosen=##class(PI.ModelSettings).Activate("default",legacy.version)
     do ..Assert(##class(PI.ModelConfig).Name()="AI.LLM.PIReviewPITEST","legacy profile and key remain switchable")
@@ -68,7 +68,7 @@ ClassMethod Pricing()
     kill ^PIBudget($namespace)
     set id=##class(PI.Agent).Reserve()
     do ##class(PI.Agent).Settle(id,{"total_prompt_tokens":1000,"total_completion_tokens":1000},{"input":3,"output":9})
-    do ..Assert(^PIBudget($namespace,"spentCny")=0.12,"settlement uses the captured provider rates")
+    do ..Assert(^PIBudget($namespace,"spentUsd")=0.012,"settlement uses the captured dollar provider rates")
     kill ^PIBudget($namespace)
     write "MODEL_SETTINGS_PRICING_OK",!
 }

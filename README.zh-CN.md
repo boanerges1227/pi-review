@@ -134,6 +134,8 @@ MCP 仪表盘展示有上限的历史调用观测和 Production 状态，不主�
 - IRIS 原生来源 MCP：验证来源记录并以幂等方式处理补全请求。USER 与 PITEST 使用独立端点、独立签名密钥、Bearer 凭据和受限能力范围。
 - 原生只读 MCP 发布服务：提供按案例授权的案例、证据和运行轨迹工具；工作台提供 MCP 仪表盘和 Token 管理。
 - 同步 `/identity-fhir/$process-message` 端点：接受本项目支持的 FHIR R4 消息 Bundle，包含 `MessageHeader` 和 `Patient`；返回 FHIR 消息响应，错误使用 `OperationOutcome`。这是限定范围的演示消息规范，不是完整的 FHIR 服务器。
+- Embedded Python 在候选比较工具中增加姓名相似度辅助证据；不同标识符仍禁止关联，只读页面重放已保存的解释结果。
+- 原生 Workflow Engine 任务通过 Production 分发，支持明确的审核成员关系、领取、快照复核及提交后的任务完成恢复。
 
 FHIR 操作要求 `application/fhir+json` 和本地写入请求头 `X-Identity-Review: local-demo`。消息包含一个被 focus 引用的 `Patient`、`patient-upsert` 事件，Bundle 最多 20 个条目、大小不超过 64 KiB。支持的来源端点为 `urn:pi:source:HIS`、`urn:pi:source:EMR` 和 `urn:pi:source:CHECKUP`；如提供标识，其值须使用合成数据前缀 `SYN-`。操作为同步处理；不支持的字段或冲突的消息 ID 会被拒绝。完全相同的消息重试会返回已保存的响应。
 
@@ -180,13 +182,13 @@ Production 配置为随 IRIS 自动启动。计划内重启可执行 `docker com
 
 ## 配置模型
 
-首次初始化时，可在被 Git 忽略的 `.env` 中设置 `PI_API_KEY`、`PI_BASE_URL`、`PI_MODEL` 和 `PI_LIVE_ENABLED=1`，也可以在设置页面配置模型。默认配置建立后，重新初始化不会用 `.env` 覆盖它；后续修改端点、模型或密钥请使用设置页面。`PI_LIVE_ENABLED` 是容器环境设置，修改后需要重新运行初始化。不要提交 `.env`、生成的 Wallet 文件或客户端 Token。本项目使用人民币 30 元的本地评估预算和保守估算价格；这是演示限制，不保证与服务商账单完全一致。实际调查前请核对服务商的价格和费用。
+首次初始化时，可在被 Git 忽略的 `.env` 中设置 `PI_API_KEY`、`PI_BASE_URL`、`PI_MODEL` 和 `PI_LIVE_ENABLED=1`，也可以在设置页面配置模型。默认配置建立后，重新初始化不会用 `.env` 覆盖它；后续修改端点、模型或密钥请使用设置页面。`PI_LIVE_ENABLED` 是容器环境设置，修改后需要重新运行初始化。不要提交 `.env`、生成的 Wallet 文件或客户端 Token。本项目使用 3 美元的本地评估预算和保守估算价格；这是演示限制，不保证与服务商账单完全一致。实际调查前请核对服务商的价格和费用。
 
 ## 演示步骤
 
 1. 登录后选择 **Load demo cases**，无需调用模型即可生成合成案例。
 2. 调查姓名拼写差异，查看来源核验、治理证据和建议。
-3. 由人工审核建议并确认或拒绝。工作台会记录决定，并支持填写理由后撤销。
+3. 点击 **Claim review task** 领取原生任务，再由人工审核建议并确认或拒绝。默认本地审核成员为已有的 `_SYSTEM` 账号。工作台会记录决定，并支持填写理由后撤销；来源变化会使旧任务失效。
 4. 调查字段缺失的案例，请求补全，通过原生 MCP 获取下一个模拟来源版本，再次发起调查。
 5. 打开 MCP 仪表盘，查看来源服务、发布服务的历史观测和调用轨迹。
 

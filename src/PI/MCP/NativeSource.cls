@@ -25,7 +25,7 @@ ClassMethod CallProtected(action As %String, capability As %String, secret As %S
         if (scope.action'=action)!(scope.namespace'=$namespace)!(scope.expires'>epoch)!(scope.expires>(epoch+180))!(scope.caseId="")!(scope.caseVersion<1)!(scope.sourceVersion<1) { throw ##class(%Exception.General).%New("SOURCE_ACCESS_DENIED") }
         set system=scope.sourceSystem,patient=scope.sourcePatientId,version=scope.sourceVersion
         if (system="")!(patient="") { throw ##class(%Exception.General).%New("SOURCE_ACCESS_DENIED") }
-        set stream=##class(%Stream.FileCharacter).%New(),sc=stream.LinkToFile("/workspace/data/source-registry.json")
+        set stream=##class(%Stream.FileCharacter).%New(),sc=stream.LinkToFile(##class(PI.InstallPaths).SourceRegistryPath())
         if $system.Status.IsError(sc) { throw ##class(%Exception.General).%New("SOURCE_REGISTRY_UNAVAILABLE") }
         set registry={}.%FromJSON(stream),versions=registry.%Get(system_":"_patient,{}),iter=versions.%GetIterator(),latest=0,next=0
         while iter.%GetNext(.key,.record) { if (+key)>latest { set latest=+key } if ((+key)>version)&&((next=0)||((+key)<next)) { set next=+key } }

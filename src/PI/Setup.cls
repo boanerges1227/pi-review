@@ -56,6 +56,7 @@ ClassMethod Install()
     set sc=##class(Ens.Director).RecoverProduction()
     if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) }
     do ##class(PI.Governance).Install()
+    do ##class(PI.Workflow.Setup).Install("_SYSTEM")
     set sc=##class(Ens.Director).StartProduction("PI.Production")
     if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) }
     // Configure the Production to start with IRIS so the workflow recovers after a container restart.

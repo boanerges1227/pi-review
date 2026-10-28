@@ -63,7 +63,7 @@ async function run(button, task) {
 async function refresh() {
   const health = await api("/health");
   $("connection").textContent = `IRIS build 154 · Production ${health.productionRunning ? "running" : "stopped"} · Source MCP ${health.mcp?.status || "NOT_CHECKED"} · ${health.liveEnabled && health.modelConfig?.configured ? "Live model configured" : "Manual fallback"}`;
-  $("budget").textContent = `${health.model || "No model"} · Estimate ¥${Number(health.knownEstimateCny ?? health.estimatedCny ?? 0).toFixed(2)} + unknown usage allowance ¥${Number(health.unknownUsageCny || 0).toFixed(2)} + in flight ¥${Number(health.reservedCny || 0).toFixed(2)} / ¥${health.budgetCny}`;
+  $("budget").textContent = `${health.model || "No model"} · Estimate US$${Number(health.knownEstimateUsd ?? health.estimatedUsd ?? 0).toFixed(6)} + unknown usage allowance US$${Number(health.unknownUsageUsd || 0).toFixed(2)} + in flight US$${Number(health.reservedUsd || 0).toFixed(2)} / US$${Number(health.budgetUsd ?? 3).toFixed(2)}`;
   const cases = await api("/cases");
   $("count").textContent = cases.length;
   $("cases").replaceChildren();
@@ -140,19 +140,31 @@ async function showCase(id) {
   if (!c.candidates.length) select.append(new Option("No candidate — request source enrichment", ""));
   for (const r of c.candidates) select.append(new Option(`${r.name} · ${r.sourceSystem} · ${r.id} · ${r.masterId || "not associated"}`, r.id));
   const compare = node("div");
-  const renderCompare = () => compare.replaceChildren(comparison(c, c.candidates.find(x => x.id === select.value)));
+  const renderCompare = () => {
+    compare.replaceChildren(comparison(c, c.candidates.find(x => x.id === select.value)));
+    const score = c.comparisons?.[select.value]?.nameSimilarity;
+    if (score) compare.append(node("p", `Name similarity (supporting evidence): ${score.comparable ? Math.round(score.score * 100) + "%" : "Unavailable"}. Human review and identifier checks still apply.`, "muted small"));
+  };
   select.addEventListener("change", renderCompare);
   renderCompare();
   root.append(select, compare);
   const review = node("section", null, "block");
   review.append(node("h3", "Human review"));
+  const workflow = c.workflow || {};
+  review.append(node("p", `Workflow: ${workflow.status || "Not created"}${workflow.taskId ? " · Task " + workflow.taskId : ""}${workflow.assignedTo ? " · Assigned to " + workflow.assignedTo : ""}`, "muted small"));
+  if (!["APPROVED", "REJECTED", "NEEDS_DATA"].includes(c.status) && workflow.canClaim && !workflow.ownedByCurrentUser) {
+    const claim = node("button", "Claim review task", "secondary");
+    claim.disabled = Boolean(workflow.assignedTo);
+    claim.addEventListener("click", () => run(claim, async () => { await api(`/cases/${id}/claim`, {version:c.version}); await refresh(); }));
+    review.append(claim);
+  }
   const reason = node("textarea");
   reason.placeholder = "Record the evidence you checked and why this decision is justified…";
   reason.setAttribute("aria-label", "Review reason");
   const actions = node("div", null, "review-actions");
   for (const [title, action, cls] of [["Confirm association","LINK",""],["Keep separate","SEPARATE","secondary"],["Reject change","REJECT","secondary"]]) {
     const b = node("button", title, cls);
-    b.disabled = ["APPROVED","REJECTED"].includes(c.status);
+    b.disabled = ["APPROVED","REJECTED","NEEDS_DATA"].includes(c.status) || !workflow.ownedByCurrentUser;
     b.addEventListener("click", () => run(b, () => decide(c, action, select.value, reason.value)));
     actions.append(b);
   }

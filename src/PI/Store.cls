@@ -107,6 +107,19 @@ ClassMethod Detail(id As %String) As %DynamicObject
     set c.baseline=##class(PI.Rules).Baseline(c.incoming,c.candidates)
     set evidenceVersion=$get(^PIData($namespace,"evidenceVersion",id),c.%Get("evidenceVersion",c.version))
     for { set key=$order(^PIData($namespace,"evidence",id,evidenceVersion,key)) quit:key=""  do e.%Push({}.%FromJSON(^PIData($namespace,"evidence",id,evidenceVersion,key))) }
+    // Views use immutable collected evidence; do not initialize Python inside a native MCP gateway request.
+    set comparisons={}
+    for i=0:1:e.%Size()-1 {
+        set proof=e.%Get(i)
+        if 'c.%Get("stale",0),proof.tool="compare_identity_fields",proof.data.%Get("incomingSourceVersion",0)=c.incoming.sourceVersion {
+            for j=0:1:c.candidates.%Size()-1 {
+                set candidate=c.candidates.%Get(j)
+                if (candidate.id=proof.data.candidateId)&&(candidate.sourceVersion=proof.data.%Get("candidateSourceVersion",0)) { do comparisons.%Set(candidate.id,proof.data) }
+            }
+        }
+    }
+    set c.comparisons=comparisons
+    set c.workflow=##class(PI.Workflow.Bridge).View(id,c.version)
     set key=""
     for { set key=$order(^PIData($namespace,"audit",id,key)) quit:key=""  do a.%Push({}.%FromJSON(^PIData($namespace,"audit",id,key))) }
     set key=""

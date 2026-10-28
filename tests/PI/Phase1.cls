@@ -108,12 +108,13 @@ ClassMethod HoldInvestigation(caseId As %String)
 ClassMethod BudgetHeadroom()
 {
     kill ^PIBudget($namespace)
-    set ^PIBudget($namespace,"spentCny")=18
+    do ##class(PI.Budget).EnsureUsd()
+    set ^PIBudget($namespace,"spentUsd")=1.8
     set id=##class(PI.Agent).ReserveAvailable()
-    do ..Assert(^PIBudget($namespace,"reservedCny")=12,"reserve only remaining authorized headroom")
+    do ..Assert(^PIBudget($namespace,"reservedUsd")=1.2,"reserve only remaining authorized dollar headroom")
     do ##class(PI.Agent).Settle(id,{})
-    do ..Assert((^PIBudget($namespace,"spentCny")=30)&&(^PIBudget($namespace,"reservedCny")=0),"unknown usage consumes exactly its reservation")
-    do ..Assert($get(^PIBudget($namespace,"unknownCny"))=12,"unknown usage allowance is distinct from known token estimate")
+    do ..Assert((^PIBudget($namespace,"spentUsd")=3)&&(^PIBudget($namespace,"reservedUsd")=0),"unknown usage consumes exactly its dollar reservation")
+    do ..Assert($get(^PIBudget($namespace,"unknownUsd"))=1.2,"unknown dollar allowance is distinct from known token estimate")
     set denied=0
     try { set id=##class(PI.Agent).ReserveAvailable() } catch ex { set denied=(ex.Name="BUDGET_LIMIT") }
     do ..Assert(denied,"exhausted authorized budget blocks further calls")
@@ -130,7 +131,7 @@ ClassMethod LocalFailureBilling()
     set r={}.%FromJSON(^PIData($namespace,"run","missing-local-case",9001))
     do ..Assert(r.%Get("modelStarted",-1)=0,"pre-request local error identified explicitly")
     do ##class(PI.Agent).Settle(id,r.billingStats)
-    do ..Assert((^PIBudget($namespace,"spentCny")=0)&&(^PIBudget($namespace,"reservedCny")=0),"local pre-request failure consumes no model budget")
+    do ..Assert((^PIBudget($namespace,"spentUsd")=0)&&(^PIBudget($namespace,"reservedUsd")=0),"local pre-request failure consumes no model budget")
     kill ^PIBudget($namespace)
     write "PHASE1_LOCAL_FAILURE_OK",!
 }
