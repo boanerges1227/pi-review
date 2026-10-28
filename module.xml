@@ -3,7 +3,7 @@
 <Document name="pi-review.ZPM">
 <Module>
   <Name>pi-review</Name>
-  <Version>1.1.0</Version>
+  <Version>1.1.1</Version>
   <Description>Patient Identity Conflict Review Assistant. An InterSystems IRIS interoperability production in which an AI Hub agent investigates synthetic patient identity conflicts, gathers case-scoped source evidence through native MCP tools and a governance knowledge base, and recommends a route for human review. The reviewer keeps control of identity mappings; the agent cannot approve a merge.</Description>
   <Keywords>ai-hub,agent,interoperability,production,mcp,fhir,patient-identity,identity-resolution,empi,rag,vector</Keywords>
   <Author>
@@ -31,10 +31,11 @@
   -->
   <SourcesRoot>src</SourcesRoot>
   <Resource Name="PI.PKG" Directory="." Flags="ck"/>
-  <FileCopy Name="web/" Target="${libdir}pi-review/web/"/>
-  <FileCopy Name="data/" Target="${libdir}pi-review/data/"/>
+  <!-- ManagerDirectory follows Durable %SYS; the installation lib directory is read-only there. -->
+  <FileCopy Name="web/" Target="${mgrdir}pi-review/web/"/>
+  <FileCopy Name="data/" Target="${mgrdir}pi-review/data/"/>
   <Invoke Class="PI.PackageSetup" Method="Install" Phase="Activate" When="After" CheckStatus="true">
-    <Arg>${libdir}pi-review/</Arg>
+    <Arg>${mgrdir}pi-review/</Arg>
   </Invoke>
 
   <AfterInstallMessage>
