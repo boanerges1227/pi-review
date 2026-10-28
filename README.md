@@ -168,7 +168,7 @@ chmod 600 .env
 bash scripts/bootstrap.sh
 ```
 
-Open <http://127.0.0.1:52784/identity/> and sign in with an existing IRIS administrator account that has `%Admin_ConfigStore` and `%Admin_Wallet` permissions. The settings page is `/identity/settings`, and the MCP dashboard is `/identity/mcp`. Ports are loopback-only; configure `PI_PORT`, `PI_MCP_PORT`, and `PI_MCP_TEST_PORT` in `.env` to avoid collisions. USER and PITEST have separate storage. Re-running bootstrap preserves this installation's data and existing credentials.
+Open <http://127.0.0.1:52784/identity/> and sign in with an existing IRIS administrator account that has `%Admin_ConfigStore` and `%Admin_Wallet` permissions. Bootstrap disables the first-login password-change requirement for the local demo account `_SYSTEM`, preserving its existing password and roles; a fresh installation uses the loaded image's initial credentials. The settings page is `/identity/settings`, and the MCP dashboard is `/identity/mcp`. Ports are loopback-only; configure `PI_PORT`, `PI_MCP_PORT`, and `PI_MCP_TEST_PORT` in `.env` to avoid collisions. USER and PITEST have separate storage. Re-running bootstrap preserves this installation's data and existing credentials.
 
 The default Compose project is `patient-identity-native` and the default IRIS container is `pi-native-review`, separate from the earlier prototype. For another isolated installation, set a unique `COMPOSE_PROJECT_NAME`, `PI_CONTAINER` and three available port values before bootstrapping. Reusing a Compose project name reuses its volumes.
 
