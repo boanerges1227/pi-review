@@ -1,0 +1,5 @@
+.env
+.git
+.superpowers
+artifacts
+__pycache__

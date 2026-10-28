@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MCP Dashboard · Identity Review</title>
+  <link rel="stylesheet" href="/identity/style.css"><link rel="stylesheet" href="/identity/mcp.css"><script defer src="/identity/admin-session.js"></script><script defer src="/identity/mcp.js"></script>
+</head>
+<body class="mcp-page">
+  <header><a href="/identity/" class="brand"><span class="mark">i</span> IDENTITY<span class="brand-light"> / REVIEW</span></a><nav class="main-nav" aria-label="Main navigation"><a href="/identity/">Workbench</a><a href="/identity/mcp" aria-current="page">MCP Dashboard</a><a href="/identity/mcp-tokens">MCP Tokens</a><a href="/identity/settings">AI settings</a></nav><span class="platform">Powered by INTERSYSTEMS IRIS · AI HUB</span><div class="admin-session-controls"><span id="admin-user">Checking session…</span><a id="admin-login" href="/identity/login">Sign in</a><button id="admin-logout" type="button" class="secondary" hidden>Sign out</button></div></header>
+  <main class="mcp-main">
+    <section class="mcp-hero"><div><p class="eyebrow">INTEROPERABILITY OBSERVABILITY</p><h1>MCP, in view.</h1><p class="intro">Follow every connection. Inspect the evidence. See what needs attention.</p></div><div class="mcp-controls"><button id="dashboard-refresh">Refresh data <span aria-hidden="true">↻</span></button><label class="auto-control"><input type="checkbox" id="auto-refresh" checked> Auto refresh · 15s</label></div></section>
+    <div class="mcp-snapshot"><span id="snapshot-status">Loading recorded telemetry…</span><span id="refresh-state">Read-only · no model calls</span></div>
+    <div id="dashboard-notice" role="status" aria-live="polite"></div>
+    <section class="mcp-metrics" aria-label="Recorded MCP metrics">
+      <div class="mcp-metric"><span>Source MCP calls</span><strong id="metric-calls">—</strong><small id="calls-detail">Recorded transport requests</small></div>
+      <div class="mcp-metric"><span>Transport success</span><strong id="metric-success">—</strong><small>Separate from identity verification</small></div>
+      <div class="mcp-metric"><span>End-to-end P95</span><strong id="metric-latency">—</strong><small>Includes client setup and discovery</small></div>
+      <div class="mcp-metric"><span>Active enrichment</span><strong id="metric-active">—</strong><small>Current case and waiting version only</small></div>
+    </section>
+    <section class="mcp-section"><div class="mcp-heading"><div><p class="eyebrow">TWO DIRECTIONS, ONE WORKFLOW</p><h2>Connections &amp; tools</h2></div><span class="mcp-tag">Passive observations</span></div><div id="server-cards" class="mcp-servers"></div>
+      <div class="mcp-flow"><span class="flow-label">SOURCE WORKFLOW</span><ol><li><span>01</span>Identity process</li><li><span>02</span>Native ToolMgr</li><li><span>03</span>Source MCP</li><li><span>04</span>Scoped evidence</li><li><span>05</span>Human review</li></ol><p>External clients enter through the native IRIS MCP gateway. Case access and expected versions are checked on each readonly tool call.</p></div>
+    </section>
+    <div class="mcp-insights">
+      <section class="mcp-panel"><div class="mcp-heading"><div><p class="eyebrow">RECORDED REQUESTS</p><h2>Tool activity</h2></div><span id="published-summary" class="mcp-subtle"></span></div><div id="tool-activity"></div></section>
+      <section class="mcp-panel"><div class="mcp-heading"><div><p class="eyebrow">BUSINESS OUTCOME</p><h2>Source verification</h2></div></div><p class="mcp-explainer">Immutable evidence items across recorded case versions. A successful request can still return a mismatch.</p><div id="verification-outcomes"></div><p id="verification-total" class="mcp-subtle"></p></section>
+    </div>
+    <section class="mcp-panel mcp-activity"><div class="mcp-heading"><div><p class="eyebrow">FOLLOW THE REQUEST</p><h2>Recent activity</h2></div><span id="activity-count" class="mcp-subtle"></span></div>
+      <div class="mcp-filters"><label>Direction<select id="direction-filter"><option value="all">Both directions</option><option value="outbound">Source MCP</option><option value="inbound">Published tools</option></select></label><label>Result<select id="result-filter"><option value="all">All results</option><option value="success">Successful</option><option value="attention">Needs attention</option></select></label><label>Tool<select id="tool-filter"><option value="all">All tools</option><option>verify_source_record</option><option>request_enrichment</option><option>get_enrichment</option><option>review_case</option><option>review_evidence</option><option>review_run_trace</option></select></label><label>Case<input id="case-filter" placeholder="e.g. c10" autocomplete="off"></label></div>
+      <div class="mcp-table-wrap"><table class="mcp-table"><thead><tr><th>Observation</th><th>Direction / tool</th><th>Case / context</th><th>Result</th><th>Duration</th></tr></thead><tbody id="activity-body"><tr><td colspan="5">Loading recorded activity…</td></tr></tbody></table></div><button id="activity-more" class="secondary" hidden>Show more</button><p class="mcp-footnote">Newest 100 records per direction within the scanned scope. Timestamped events appear first; legacy entries have no reliable timestamp. Source duration includes connection setup; published duration measures tool execution.</p>
+    </section>
+    <section class="mcp-panel"><div class="mcp-heading"><div><p class="eyebrow">CLOSE THE LOOP</p><h2>Enrichment tasks</h2></div><span id="task-summary" class="mcp-subtle"></span></div><div class="mcp-table-wrap"><table class="mcp-table"><thead><tr><th>Case</th><th>Origin → waiting version</th><th>Recorded state</th><th>Current task</th><th>Source receipt</th></tr></thead><tbody id="task-body"><tr><td colspan="5">Loading recorded tasks…</td></tr></tbody></table></div><p id="task-limit" class="mcp-footnote"></p></section>
+    <footer>MCP Dashboard <span>Recorded observations, not a live connectivity probe. Refresh reads telemetry and does not invoke business tools.</span></footer>
+  </main>
+</body>
+</html>

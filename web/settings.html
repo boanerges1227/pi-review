@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI settings · Identity Review</title>
+  <link rel="stylesheet" href="/identity/style.css"><script defer src="/identity/admin-session.js"></script><script defer src="/identity/settings.js"></script>
+</head>
+<body>
+  <header><a href="/identity/" class="brand"><span class="mark">i</span> IDENTITY<span class="brand-light"> / REVIEW</span></a><nav class="main-nav" aria-label="Main navigation"><a href="/identity/">Workbench</a><a href="/identity/mcp">MCP Dashboard</a><a href="/identity/mcp-tokens">MCP Tokens</a><a href="/identity/settings" aria-current="page">AI settings</a></nav><span class="platform">Powered by INTERSYSTEMS IRIS · AI HUB</span><div class="admin-session-controls"><span id="admin-user">Checking session…</span><a id="admin-login" href="/identity/login?returnTo=%2Fidentity%2Fsettings" class="button-link secondary">Sign in</a><button id="admin-logout" class="secondary" type="button" hidden>Sign out</button></div></header>
+  <main>
+    <section class="hero"><div><p class="eyebrow">MODEL CONFIGURATION</p><h1>Your AI, ready to investigate.</h1><p class="intro">Save common providers. Choose the model for the next investigation.</p></div></section>
+    <div class="statusbar"><span id="active-summary">Loading active model…</span><span id="settings-budget"></span></div>
+    <div id="settings-notice" role="status" aria-live="polite"></div>
+    <section class="settings-workspace">
+      <aside><div class="section-heading"><h2>Saved configurations</h2><span id="profile-count" class="count">0</span></div><p class="muted small">Saving a profile preserves your current choice.</p><button id="new-profile" class="secondary new-profile">+ Add configuration</button><div id="profiles"></div></aside>
+      <article>
+        <div class="case-header"><div><p id="form-eyebrow" class="eyebrow">CONFIGURATION</p><h2 id="form-title">AI provider</h2></div><span id="profile-status" class="badge">Not active</span></div>
+        <form id="model-form" autocomplete="off">
+          <div class="form-grid">
+            <div><label for="label">Configuration name</label><input id="label" maxlength="80" required placeholder="e.g. Qwen review model"></div>
+            <div><label for="provider">Provider</label><select id="provider" required></select></div>
+            <div class="full-width"><label for="base-url">API base URL</label><input id="base-url" type="url" maxlength="500" required spellcheck="false"><p id="endpoint-note" class="field-note">Use the provider endpoint for your account and region.</p></div>
+            <div class="full-width"><label for="model">Model ID</label><input id="model" maxlength="200" required spellcheck="false" placeholder="Enter the exact model ID from your provider account"></div>
+            <div class="full-width"><label for="api-key">API key</label><input id="api-key" type="password" maxlength="2048" autocomplete="new-password" spellcheck="false" placeholder="Enter a key to store in IRIS Wallet"><p id="key-note" class="field-note">Keys are stored in IRIS Wallet and never returned to this page.</p></div>
+          </div>
+          <details class="rate-settings"><summary>Cost planning · required before activating a cloud model</summary><p class="field-note">Enter an upper-bound rate in USD per million tokens for this model. This is your planning estimate, not a provider price quote. The existing cumulative evaluation allowance stays at ¥30.</p><div class="form-grid"><div><label for="input-rate">Input · USD / 1M tokens</label><input id="input-rate" type="number" min="0" max="10000" step="any" placeholder="Enter rate"></div><div><label for="output-rate">Output · USD / 1M tokens</label><input id="output-rate" type="number" min="0" max="10000" step="any" placeholder="Enter rate"></div></div><p class="field-note">Planning coefficient: ¥10 per USD. Local Ollama can use zero rates.</p></details>
+          <div class="review-actions"><button id="save-profile" type="submit">Save configuration</button><button id="activate-profile" type="button" class="secondary">Use for investigations</button></div>
+          <p class="review-note">Saving checks configuration format. It does not call the model or test the key. Saving and switching require an existing IRIS configuration and Wallet administrator account. In-progress investigations keep their configuration.</p>
+        </form>
+      </article>
+    </section>
+    <footer>Native Config Store + IRIS Wallet <span>Only the selected configuration is used for new investigations.</span></footer>
+  </main>
+</body>
+</html>

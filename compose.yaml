@@ -1,0 +1,76 @@
+name: patient-identity-native
+services:
+  init-durable:
+    image: ${IRIS_IMAGE:-iris-community:2026.3.0AI.154.0}
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c", "chown irisowner:irisowner /durable /source-secret /gateway-secret"]
+    volumes:
+      - pi-data:/durable
+      - pi-source-secret:/source-secret
+      - pi-gateway-secret:/gateway-secret
+  iris:
+    image: ${IRIS_IMAGE:-iris-community:2026.3.0AI.154.0}
+    container_name: ${PI_CONTAINER:-pi-native-review}
+    depends_on:
+      init-durable:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${PI_PORT:-52784}:52773"
+      - "127.0.0.1:${PI_MCP_PORT:-52785}:52785"
+      - "127.0.0.1:${PI_MCP_TEST_PORT:-52786}:52786"
+    environment:
+      ISC_DATA_DIRECTORY: /durable/iris
+      HF_HOME: /durable/iris/models
+      FASTEMBED_CACHE_DIR: /durable/iris/models/hub
+      PI_LIVE_ENABLED: ${PI_LIVE_ENABLED:-0}
+    volumes:
+      - ./src:/workspace/src:ro
+      - ./data:/workspace/data:ro
+      - ./tests:/workspace/tests:ro
+      - ./web:/workspace/web:ro
+      - pi-data:/durable
+      - pi-source-secret:/source-secret
+      - pi-gateway-secret:/gateway-secret
+    healthcheck:
+      test: ["CMD-SHELL", "iris qlist IRIS | grep -qi running"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  mcp-gateway:
+    image: ${IRIS_IMAGE:-iris-community:2026.3.0AI.154.0}
+    network_mode: service:iris
+    entrypoint: ["/usr/irissys/bin/iris-mcp-server", "--config", "/gateway-secret/gateway.toml", "run", "--status-tool=false"]
+    volumes:
+      - pi-gateway-secret:/gateway-secret:ro
+    restart: unless-stopped
+    depends_on:
+      iris:
+        condition: service_healthy
+        restart: true
+  native-source-user:
+    image: ${IRIS_IMAGE:-iris-community:2026.3.0AI.154.0}
+    network_mode: service:iris
+    entrypoint: ["/usr/irissys/bin/iris-mcp-server", "--config", "/gateway-secret/native/source-shared.toml", "run", "--status-tool=false"]
+    volumes:
+      - pi-gateway-secret:/gateway-secret:ro
+    profiles: ["native"]
+    restart: unless-stopped
+    depends_on:
+      iris:
+        condition: service_healthy
+        restart: true
+  mcp-gateway-test:
+    profiles: ["test"]
+    image: ${IRIS_IMAGE:-iris-community:2026.3.0AI.154.0}
+    network_mode: service:iris
+    entrypoint: ["/usr/irissys/bin/iris-mcp-server", "--config", "/gateway-secret/gateway-test.toml", "run", "--status-tool=false"]
+    volumes:
+      - pi-gateway-secret:/gateway-secret:ro
+    depends_on:
+      iris:
+        condition: service_healthy
+        restart: true
+volumes:
+  pi-source-secret:
+  pi-gateway-secret:
+  pi-data:

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="IRIS" version="26" zv="IRIS for UNIX (Ubuntu Server LTS for ARM64 Containers) 2026.3.0AI (Build 154U)" ts="2026-10-28 11:40:00">
+<Document name="pi-review.ZPM">
+<Module>
+  <Name>pi-review</Name>
+  <Version>1.0.0</Version>
+  <Description>Patient Identity Conflict Review Assistant. An InterSystems IRIS interoperability production in which an AI Hub agent investigates synthetic patient identity conflicts, gathers case-scoped source evidence through native MCP tools and a governance knowledge base, and recommends a route for human review. The reviewer keeps control of identity mappings; the agent cannot approve a merge.</Description>
+  <Keywords>ai-hub,agent,interoperability,production,mcp,fhir,patient-identity,identity-resolution,empi,rag,vector</Keywords>
+  <Author>
+    <Person>John Pan</Person>
+    <CopyrightDate>2026</CopyrightDate>
+    <License>MIT</License>
+    <Notes>https://community.intersystems.com/user/john-pan</Notes>
+  </Author>
+  <Packaging>module</Packaging>
+
+  <!--
+    This module requires the InterSystems AI Hub EAP community image 2026.3.0AI.154.0,
+    which provides %AI.Agent, %AI.ToolSet, %AI.Policy and %AI.ToolMgr. Those classes are
+    part of the image and are not available from the public IPM registry, so they cannot
+    be declared as a ModuleReference dependency.
+
+    The production is interoperability-based, so the target namespace must be
+    interoperability-enabled.
+  -->
+  <SystemRequirements Version=">=2026.3" Interoperability="enabled"/>
+
+  <!--
+    Classes live directly under src/ (src/PI, src/PI/MCP, src/PI/FHIR) rather than the
+    IPM default src/cls/, so the resource directory is pinned to the sources root.
+  -->
+  <SourcesRoot>src</SourcesRoot>
+  <Resource Name="PI.PKG" Directory="." Flags="ck"/>
+
+  <AfterInstallMessage>
+PI Review ObjectScript classes are now installed.
+
+This module does NOT produce a running deployment. The application also needs, all of which
+are provisioned host-side and cannot be expressed in an IPM manifest:
+  - the local embedding model for the AI Hub governance knowledge base
+  - named Docker volumes holding MCP bearer credentials and gateway TOML configuration
+  - iris-mcp-server gateway containers sharing the IRIS network namespace
+  - Config Store / Wallet model profile setup
+
+For a working instance use the Docker Compose bootstrap documented in README.md:
+
+  cp .env.example .env &amp;&amp; chmod 600 .env &amp;&amp; bash scripts/bootstrap.sh
+
+Then open http://127.0.0.1:52784/identity/ and sign in with an IRIS administrator account
+holding %Admin_ConfigStore and %Admin_Wallet. Verify with scripts/test.sh.
+
+Note: the static workbench assets (web/) and the synthetic source registry
+(data/source-registry.json) are read from /workspace at runtime and are supplied by the
+repository checkout or the Compose bind mounts, not by this module.
+  </AfterInstallMessage>
+</Module>
+</Document>
+</Export>

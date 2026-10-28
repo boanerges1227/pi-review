@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Identity Review · Evidence before association</title>
+  <link rel="stylesheet" href="/identity/style.css"><script defer src="/identity/admin-session.js"></script><script defer src="/identity/app.js"></script>
+</head>
+<body>
+  <header><a href="/identity/" class="brand"><span class="mark">i</span> IDENTITY<span class="brand-light"> / REVIEW</span></a><nav class="main-nav" aria-label="Main navigation"><a href="/identity/" aria-current="page">Workbench</a><a href="/identity/mcp">MCP Dashboard</a><a href="/identity/mcp-tokens">MCP Tokens</a><a href="/identity/settings">AI settings</a></nav><span class="platform">Powered by INTERSYSTEMS IRIS · AI HUB</span><div class="admin-session-controls"><span id="admin-user">Checking session…</span><a id="admin-login" href="/identity/login">Sign in</a><button id="admin-logout" type="button" class="secondary" hidden>Sign out</button></div></header>
+  <main>
+    <section class="hero"><div><p class="eyebrow">PATIENT DATA OPERATIONS</p><h1>Identity, with evidence.</h1><p class="intro">Investigate conflicting records. Trace every decision. Keep people in control.</p></div><div class="hero-actions"><button id="seed">Load demo cases</button><button id="refresh" class="secondary">Refresh</button></div></section>
+    <div class="statusbar"><span id="connection">Connecting to IRIS…</span><span id="budget"></span></div>
+    <div id="notice" role="status" aria-live="polite"></div>
+    <section class="workspace">
+      <aside><div class="section-heading"><h2>Review queue</h2><span id="count" class="count">0</span></div><p class="muted small">Select a case to inspect its evidence.</p><div id="cases"></div></aside>
+      <article id="detail"><div class="empty"><span class="empty-icon">◎</span><h2>A clear view of every conflict.</h2><p>Load the synthetic scenarios, then select a case.<br>Model calls start only when you choose Investigate.</p></div></article>
+    </section>
+    <details class="intake-panel"><summary>Source simulator · submit a new record or enrichment</summary><p class="muted">Submit project JSON or a FHIR R4 message Bundle. Use a higher source version to update an existing case; use synthetic data only.</p><textarea id="payload" spellcheck="false" aria-label="Synthetic source message"></textarea><button id="load-fhir-example" class="secondary" type="button">Load FHIR message example</button> <button id="submit-record">Submit source message</button></details>
+    <footer>Patient Identity Conflict Review Assistant <span>Original source records are retained. Cross-record associations require human review.</span></footer>
+  </main>
+</body>
+</html>

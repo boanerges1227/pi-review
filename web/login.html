@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sign in · Identity Review</title>
+  <link rel="stylesheet" href="/identity/style.css"><link rel="stylesheet" href="/identity/login.css"><script defer src="/identity/admin-session.js"></script><script defer src="/identity/login.js"></script>
+</head>
+<body class="login-page">
+  <header><a href="/identity/" class="brand"><span class="mark">i</span> IDENTITY<span class="brand-light"> / REVIEW</span></a><span class="platform">Powered by INTERSYSTEMS IRIS · AI HUB</span></header>
+  <main class="login-main">
+    <section class="login-context"><p class="eyebrow">IDENTITY REVIEW · ADMINISTRATION</p><h1>Sign in to Identity Review</h1><p>Investigate identity conflicts, inspect MCP activity, and manage your AI services.</p><div class="login-context-note"><span aria-hidden="true">◎</span><p>Sign in with your existing IRIS administrator account.</p></div></section>
+    <section class="login-card" aria-labelledby="login-title"><p class="eyebrow">WELCOME BACK</p><h2 id="login-title">Welcome back</h2><p class="login-intro">Enter your IRIS username and password.</p>
+      <form id="login-form" method="post" action="/identity/login" autocomplete="on">
+        <label for="login-username">Username</label><input id="login-username" name="username" autocomplete="username" required maxlength="128" placeholder="IRIS username" disabled>
+        <label for="login-password">Password</label><input id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="2048" placeholder="Enter your password" disabled>
+        <p id="login-notice" role="status" aria-live="polite"></p><button id="login-submit" type="submit" disabled>Sign in</button>
+      </form><p class="login-footnote">After signing in, you will return to the page you requested.</p>
+    </section>
+  </main>
+</body>
+</html>

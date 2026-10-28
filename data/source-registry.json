@@ -1,0 +1,139 @@
+{
+  "HIS:MCP-HIS-A": {
+    "1": {
+      "sourceSystem": "HIS",
+      "sourcePatientId": "MCP-HIS-A",
+      "sourceVersion": 1,
+      "name": "MCP Avery Chen",
+      "birthDate": "1988-03-17",
+      "sex": "F",
+      "identifier": "SYN-MCP-1001",
+      "phone": "TEST-PHONE-1",
+      "notes": "synthetic source MCP"
+    }
+  },
+  "EMR:MCP-EMR-A": {
+    "1": {
+      "sourceSystem": "EMR",
+      "sourcePatientId": "MCP-EMR-A",
+      "sourceVersion": 1,
+      "name": "MCP Avery Chen",
+      "birthDate": "1988-03-17",
+      "sex": "F",
+      "identifier": "SYN-MCP-1001",
+      "phone": "TEST-PHONE-1",
+      "notes": "synthetic source MCP"
+    }
+  },
+  "CHECKUP:MCP-CHECKUP-A": {
+    "1": {
+      "sourceSystem": "CHECKUP",
+      "sourcePatientId": "MCP-CHECKUP-A",
+      "sourceVersion": 1,
+      "name": "MCP Avery Chen",
+      "birthDate": "1988-03-17",
+      "sex": "F",
+      "identifier": "",
+      "phone": "TEST-PHONE-1",
+      "notes": "synthetic source MCP"
+    },
+    "2": {
+      "sourceSystem": "CHECKUP",
+      "sourcePatientId": "MCP-CHECKUP-A",
+      "sourceVersion": 2,
+      "name": "MCP Avery Chen",
+      "birthDate": "1988-03-17",
+      "sex": "F",
+      "identifier": "SYN-MCP-1001",
+      "phone": "TEST-PHONE-1",
+      "notes": "synthetic source MCP"
+    }
+  },
+  "HIS:DEMO-HIS-001": {
+    "1": {
+      "sourceSystem": "HIS",
+      "sourcePatientId": "DEMO-HIS-001",
+      "sourceVersion": 1,
+      "name": "Alce Chen",
+      "birthDate": "1985-05-06",
+      "sex": "F",
+      "identifier": "SYN-1001",
+      "phone": "TEST-PHONE-1",
+      "notes": "Synthetic source MCP"
+    },
+    "2": {
+      "sourceSystem": "HIS",
+      "sourcePatientId": "DEMO-HIS-001",
+      "sourceVersion": 2,
+      "name": "Alice Chen",
+      "birthDate": "1985-05-06",
+      "sex": "F",
+      "identifier": "SYN-1001",
+      "phone": "TEST-PHONE-1",
+      "notes": "Synthetic source MCP"
+    }
+  },
+  "EMR:DEMO-EMR-001": {
+    "1": {
+      "sourceSystem": "EMR",
+      "sourcePatientId": "DEMO-EMR-001",
+      "sourceVersion": 1,
+      "name": "Alce Chen",
+      "birthDate": "1985-05-06",
+      "sex": "F",
+      "identifier": "SYN-1001",
+      "phone": "TEST-PHONE-1",
+      "notes": "Synthetic source MCP"
+    }
+  },
+  "HIS:DEMO-HIS-002": {
+    "1": {
+      "sourceSystem": "HIS",
+      "sourcePatientId": "DEMO-HIS-002",
+      "sourceVersion": 1,
+      "name": "Alice Chen",
+      "birthDate": "1985-05-06",
+      "sex": "F",
+      "identifier": "SYN-9999",
+      "phone": "TEST-PHONE-1",
+      "notes": "Synthetic source MCP"
+    }
+  },
+  "HIS:DEMO-HIS-003": {
+    "1": {
+      "sourceSystem": "HIS",
+      "sourcePatientId": "DEMO-HIS-003",
+      "sourceVersion": 1,
+      "name": "Mei Lin",
+      "birthDate": "1990-07-08",
+      "sex": "F",
+      "identifier": "SYN-2001",
+      "phone": "TEST-PHONE-2",
+      "notes": "Synthetic source MCP"
+    }
+  },
+  "CHECKUP:DEMO-CHECKUP-003": {
+    "1": {
+      "sourceSystem": "CHECKUP",
+      "sourcePatientId": "DEMO-CHECKUP-003",
+      "sourceVersion": 1,
+      "name": "Mei Lin",
+      "birthDate": "",
+      "sex": "F",
+      "identifier": "",
+      "phone": "TEST-PHONE-2",
+      "notes": "Synthetic source MCP"
+    },
+    "2": {
+      "sourceSystem": "CHECKUP",
+      "sourcePatientId": "DEMO-CHECKUP-003",
+      "sourceVersion": 2,
+      "name": "Mei Lin",
+      "birthDate": "1990-07-08",
+      "sex": "F",
+      "identifier": "SYN-2001",
+      "phone": "TEST-PHONE-2",
+      "notes": "Synthetic source MCP"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MCP Tokens · Identity Review</title>
+  <link rel="stylesheet" href="/identity/style.css"><link rel="stylesheet" href="/identity/mcp-tokens.css"><script defer src="/identity/admin-session.js"></script><script defer src="/identity/mcp-tokens.js"></script>
+</head>
+<body class="tokens-page">
+  <header><a href="/identity/" class="brand"><span class="mark">i</span> IDENTITY<span class="brand-light"> / REVIEW</span></a><nav class="main-nav" aria-label="Main navigation"><a href="/identity/">Workbench</a><a href="/identity/mcp">MCP Dashboard</a><a href="/identity/mcp-tokens" aria-current="page">MCP Tokens</a><a href="/identity/settings">AI settings</a></nav><span class="platform">Powered by INTERSYSTEMS IRIS · AI HUB</span><div class="admin-session-controls"><span id="admin-user">Checking session…</span><a id="admin-login" href="/identity/login?returnTo=%2Fidentity%2Fmcp-tokens">Sign in</a><button id="admin-logout" type="button" class="secondary" hidden>Sign out</button></div></header>
+  <main class="tokens-main">
+    <section class="tokens-hero"><p class="eyebrow">EXTERNAL CLIENT ACCESS</p><h1>MCP access tokens</h1><p class="intro">Manage client access, case permissions and expiry.</p></section>
+    <section id="token-management" class="tokens-panel token-management" aria-labelledby="token-title">
+      <div class="token-heading"><div><p class="eyebrow">CLIENT CREDENTIALS</p><h2 id="token-title">Access tokens</h2></div><span class="token-tag">Administrator only</span></div>
+      <div class="token-intro"><p>Issue a separate token for each client. Choose exactly which cases it can read, then revoke access when it is no longer needed.</p><div class="token-admin-actions"><button id="token-load" type="button" class="secondary">Refresh tokens</button></div></div>
+      <p id="token-notice" class="token-notice" role="status" aria-live="polite">Checking your administrator session…</p>
+      <div class="token-layout">
+        <div><div class="token-list-heading"><h3>Saved tokens</h3><button id="token-new" type="button" class="secondary" disabled>New token</button></div><div id="token-list" class="token-list"><p class="token-subtle">The administrator list has not been loaded.</p></div></div>
+        <form id="token-form" class="token-form">
+          <p id="token-form-state" class="eyebrow">NEW TOKEN</p><h3 id="token-form-title">Create client access</h3>
+          <label for="token-label">Label</label><input id="token-label" required maxlength="80" placeholder="e.g. Review desktop client" autocomplete="off" disabled>
+          <label for="token-cases">Allowed cases</label><input id="token-cases" placeholder="c10, c12" autocomplete="off" aria-describedby="token-cases-note" disabled><p id="token-cases-note" class="token-footnote">Comma-separated existing case IDs, up to 50. An empty list grants no case access. Only the three readonly tools are available.</p>
+          <label for="token-days">Expires after</label><select id="token-days" disabled><option value="1">1 day</option><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="365">365 days</option></select><p id="token-expiry-note" class="token-footnote">Expiry is fixed at creation. Create a replacement token to extend access.</p>
+          <div class="token-form-actions"><button id="token-save" type="submit" disabled>Create token</button><button id="token-revoke" type="button" class="secondary token-revoke" disabled>Revoke token</button></div>
+        </form>
+      </div>
+      <div id="token-once" class="token-once" hidden><h3>Save your token now</h3><p>This is the only time the full token is shown. Store it in your MCP client’s secure configuration.</p><label for="token-secret">Bearer token</label><textarea id="token-secret" readonly rows="2" autocomplete="off" spellcheck="false"></textarea><p class="token-footnote">Endpoint: <code>http://127.0.0.1:52785/mcp</code> · Authorization: Bearer &lt;token&gt;</p><div class="token-form-actions"><button id="token-copy" type="button">Copy token</button><button id="token-clear" type="button" class="secondary">Clear from page</button></div></div>
+    </section>
+    <footer>MCP Token Management <span>Token changes require an authenticated administrator. Only readonly case tools are published.</span></footer>
+  </main>
+</body>
+</html>
