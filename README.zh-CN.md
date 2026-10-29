@@ -29,7 +29,7 @@
 
 ![API 密钥为空的 AI 设置页面](docs/screenshots/ai-settings.jpg)
 
-> **视频演示：** *[TODO: 添加视频演示链接]*
+> **视频演示：** [在 YouTube 观看演示视频](https://youtu.be/1N-tYLTfEGY)
 
 ## 目录
 

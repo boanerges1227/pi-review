@@ -29,7 +29,7 @@ The screenshots below use synthetic demo cases in a local instance. The model is
 
 ![AI settings with an empty API key field](docs/screenshots/ai-settings.jpg)
 
-> **Video demo:** *[TODO: add link to video walkthrough]*
+> **Video demo:** [Watch the walkthrough on YouTube](https://youtu.be/1N-tYLTfEGY)
 
 ## Contents
 
