@@ -35,6 +35,7 @@ printf '%s\n' "$output" | python3 -c 'import sys,re,pathlib; s=sys.stdin.read();
 python3 tests/mcp_acceptance.py
 python3 tests/mcp_token_acceptance.py
 python3 -m unittest discover -s tests -p admin_login_acceptance.py
+python3 -m unittest discover -s tests -p visit_stats_acceptance.py
 python3 -m unittest discover -s tests -p workflow_http_acceptance.py
 # Simulate source unavailability only in PITEST without interrupting the shared USER gateway.
 offline_entered=1

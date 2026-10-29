@@ -34,3 +34,15 @@ async function initLogin() {
 
 document.getElementById("login-form").addEventListener("submit", event => {event.preventDefault();submitLogin();});
 initLogin();
+
+/** Read the cumulative public page views independently so statistics errors never disable sign-in. */
+async function loadVisitStats() {
+  const count = document.getElementById("public-visit-count");
+  try {
+    const stats = await identityAdmin.request("/visit-stats");
+    if (stats.metric !== "public-login-page-views" || !Number.isSafeInteger(stats.total) || stats.total < 0) throw new Error("Invalid visit count");
+    count.textContent = new Intl.NumberFormat("en-US").format(stats.total);
+  } catch { count.textContent = "Unavailable"; }
+}
+
+loadVisitStats();

@@ -12,6 +12,7 @@ XData UrlMap
   <Route Url="/production.js" Method="GET" Call="ProductionScript"/>
   <Route Url="/production.css" Method="GET" Call="ProductionStyle"/>
   <Route Url="/login" Method="GET" Call="LoginPage"/>
+  <Route Url="/visit-stats" Method="GET" Call="VisitStats"/>
   <Route Url="/login" Method="POST" Call="Login"/>
   <Route Url="/logout" Method="POST" Call="Logout"/>
   <Route Url="/session" Method="GET" Call="Session"/>
@@ -57,7 +58,7 @@ ClassMethod OnPreDispatch(pUrl As %String, pMethod As %String, ByRef pContinue A
     set pContinue=1,path=pUrl
     if $extract(path,1)'="/" { set path="/"_path }
     // Expose only login, session endpoints and fixed static assets; protect business JSON, writes and admin data.
-    set public=$listfromstring("/login,/logout,/session,/login.js,/login.css,/admin-session.js,/style.css,/app.js,/settings.js,/mcp.js,/mcp.css,/mcp-tokens.js,/mcp-tokens.css,/production.js,/production.css")
+    set public=$listfromstring("/login,/logout,/session,/visit-stats,/login.js,/login.css,/admin-session.js,/style.css,/app.js,/settings.js,/mcp.js,/mcp.css,/mcp-tokens.js,/mcp-tokens.css,/production.js,/production.css")
     if '$listfind(public,path) {
         set state=##class(PI.AdminSession).Current()
         if 'state.authenticated {
@@ -137,6 +138,7 @@ ClassMethod RespondError(code As %String) As %Status
     if code="ADMIN_PERMISSION_REQUIRED" { set status=403 }
     if (code="BUSY")!(code="PRODUCTION_UNAVAILABLE") { set status=503 }
     if code="PRODUCTION_PORTAL_NOT_CONFIGURED" { set status=503 }
+    if code="VISIT_STATS_UNAVAILABLE" { set status=503 }
     if (code="BUDGET_BUSY")!(code="BUDGET_MIGRATION_BUSY") { set status=503 }
     if code="BUDGET_CURRENCY_INVALID" { set status=500 }
     if $extract(code,1)="<" { set status=500,code="INTERNAL_ERROR" }
@@ -308,8 +310,23 @@ ClassMethod MCPTokens() As %Status { quit ..Asset("mcp-tokens.html","text/html; 
 /// Load management styles from a fixed file under the existing same-origin content security policy.
 ClassMethod MCPTokenStyle() As %Status { quit ..Asset("mcp-tokens.css","text/css") }
 
-/// Serve the login page and fixed assets publicly; account authentication remains in the separate admin application.
-ClassMethod LoginPage() As %Status { do ..SetResponseHeaderIfEmpty("Cache-Control","no-store") quit ..Asset("login.html","text/html; charset=utf-8") }
+/// Record only public login-page GETs; a counter failure must never prevent rendering the sign-in form.
+ClassMethod LoginPage() As %Status
+{
+    do ..SetResponseHeaderIfEmpty("Cache-Control","no-store")
+    set %session.Data("PIVisitStatsUnavailable")=0
+    try {
+        do ##class(PI.VisitStats).Record(%request.GetCgiEnv("REQUEST_METHOD"),%request.GetCgiEnv("HTTP_HOST"),%request.GetCgiEnv("HTTP_X_FORWARDED_PROTO"),%request.GetCgiEnv("HTTP_CF_RAY"),$system.Util.GetEnviron("PI_PUBLIC_ORIGIN"))
+    } catch ex { set %session.Data("PIVisitStatsUnavailable")=1 }
+    quit ..Asset("login.html","text/html; charset=utf-8")
+}
+/// Let anonymous visitors read only the aggregate; reads and query parameters cannot increment or reset it.
+ClassMethod VisitStats() As %Status
+{
+    if +$get(%session.Data("PIVisitStatsUnavailable")) { quit ..RespondError("VISIT_STATS_UNAVAILABLE") }
+    try { set stats=##class(PI.VisitStats).Snapshot() } catch ex { return ..RespondError("VISIT_STATS_UNAVAILABLE") }
+    quit ..Json(stats)
+}
 /// Serve login form logic from a fixed path without accepting arbitrary file paths.
 ClassMethod LoginScript() As %Status { quit ..Asset("login.js","application/javascript") }
 /// Keep the login layout consistent with the workbench.
