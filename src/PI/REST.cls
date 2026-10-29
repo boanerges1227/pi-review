@@ -7,6 +7,10 @@ XData UrlMap
 {
 <Routes>
   <Route Url="/mcp" Method="GET" Call="MCPDashboard"/>
+  <Route Url="/production" Method="GET" Call="ProductionPage"/>
+  <Route Url="/production-target" Method="GET" Call="ProductionTarget"/>
+  <Route Url="/production.js" Method="GET" Call="ProductionScript"/>
+  <Route Url="/production.css" Method="GET" Call="ProductionStyle"/>
   <Route Url="/login" Method="GET" Call="LoginPage"/>
   <Route Url="/login" Method="POST" Call="Login"/>
   <Route Url="/logout" Method="POST" Call="Logout"/>
@@ -53,13 +57,13 @@ ClassMethod OnPreDispatch(pUrl As %String, pMethod As %String, ByRef pContinue A
     set pContinue=1,path=pUrl
     if $extract(path,1)'="/" { set path="/"_path }
     // Expose only login, session endpoints and fixed static assets; protect business JSON, writes and admin data.
-    set public=$listfromstring("/login,/logout,/session,/login.js,/login.css,/admin-session.js,/style.css,/app.js,/settings.js,/mcp.js,/mcp.css,/mcp-tokens.js,/mcp-tokens.css")
+    set public=$listfromstring("/login,/logout,/session,/login.js,/login.css,/admin-session.js,/style.css,/app.js,/settings.js,/mcp.js,/mcp.css,/mcp-tokens.js,/mcp-tokens.css,/production.js,/production.css")
     if '$listfind(public,path) {
         set state=##class(PI.AdminSession).Current()
         if 'state.authenticated {
             // End invalid sessions after rejection to prevent cached Basic identities or anonymous requests from occupying session licenses.
             do ##class(PI.AdminSession).End()
-            if (pMethod="GET"),$listfind($listfromstring("/,/mcp,/mcp-tokens,/settings"),path) {
+            if (pMethod="GET"),$listfind($listfromstring("/,/mcp,/mcp-tokens,/settings,/production"),path) {
                 set target="/identity"_path
                 set caseId=$get(%request.Data("case",1))
                 if (path="/"),$match(caseId,"^c[1-9][0-9]*$") { set target=target_"?case="_caseId }
@@ -132,6 +136,7 @@ ClassMethod RespondError(code As %String) As %Status
     if code="ADMIN_NEW_SESSION_REQUIRED" { set status=409 }
     if code="ADMIN_PERMISSION_REQUIRED" { set status=403 }
     if (code="BUSY")!(code="PRODUCTION_UNAVAILABLE") { set status=503 }
+    if code="PRODUCTION_PORTAL_NOT_CONFIGURED" { set status=503 }
     if (code="BUDGET_BUSY")!(code="BUDGET_MIGRATION_BUSY") { set status=503 }
     if code="BUDGET_CURRENCY_INVALID" { set status=500 }
     if $extract(code,1)="<" { set status=500,code="INTERNAL_ERROR" }
@@ -264,6 +269,23 @@ ClassMethod MCPTelemetry() As %Status
 
 /// Review workbench entry point.
 ClassMethod Index() As %Status { quit ..Asset("index.html","text/html; charset=utf-8") }
+/// Serve the native Production wrapper under the site's existing authentication and same-origin policy.
+ClassMethod ProductionPage() As %Status
+{
+    do %response.SetHeader("Referrer-Policy","no-referrer")
+    quit ..Asset("production.html","text/html; charset=utf-8")
+}
+/// Resolve demo credentials only for authenticated administrators; keep credential-bearing responses out of caches.
+ClassMethod ProductionTarget() As %Status
+{
+    do %response.SetHeader("Referrer-Policy","no-referrer")
+    try { set target=##class(PI.ProductionPortal).Target() } catch ex { return ..RespondError(ex.Name) }
+    quit ..Json(target)
+}
+/// Serve fixed Production assets without accepting client-selected file paths.
+ClassMethod ProductionScript() As %Status { quit ..Asset("production.js","application/javascript") }
+/// Reuse the existing same-origin stylesheet restrictions for the native Production wrapper.
+ClassMethod ProductionStyle() As %Status { quit ..Asset("production.css","text/css") }
 /// Browser interaction script.
 ClassMethod Script() As %Status { quit ..Asset("app.js","application/javascript") }
 /// Workbench stylesheet.

@@ -3,8 +3,8 @@ const identityAdmin = (() => {
   let options = {}, logoutBusy = false;
   const messages = {ADMIN_LOGIN_FAILED:"The username or password is incorrect, or the account cannot sign in.",ADMIN_PERMISSION_REQUIRED:"This account does not have administrator permissions.",ADMIN_NEW_SESSION_REQUIRED:"The login session has changed. Please sign in again.",ADMIN_AUTHENTICATION_REQUIRED:"Your session has expired. Please sign in again.",FORBIDDEN:"The request failed a security check. Refresh the page and try again."};
 
-  /** Restrict return targets to the four application pages and canonical case links, never external URLs. */
-  function safeTarget(value) { return (["/identity/", "/identity/mcp", "/identity/mcp-tokens", "/identity/settings"].includes(value) || /^\/identity\/\?case=c[1-9]\d*$/.test(value || "")) ? value : "/identity/"; }
+  /** Restrict return targets to application pages and canonical case links, never external URLs. */
+  function safeTarget(value) { return (["/identity/", "/identity/mcp", "/identity/mcp-tokens", "/identity/settings", "/identity/production"].includes(value) || /^\/identity\/\?case=c[1-9]\d*$/.test(value || "")) ? value : "/identity/"; }
 
   /** Call native session endpoints with same-origin cookies; passwords appear only in the transient login POST body. */
   async function request(path, data) {

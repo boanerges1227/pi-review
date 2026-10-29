@@ -172,6 +172,8 @@ bash scripts/bootstrap.sh
 
 访问 <http://127.0.0.1:52784/identity/>，使用已有的 IRIS 管理员账号登录；该账号需要 `%Admin_ConfigStore` 和 `%Admin_Wallet` 权限。初始化脚本会关闭本地演示账号 `_SYSTEM` 的首次登录强制改密要求，保留其已有密码和角色；全新安装使用所加载镜像的初始凭据。AI 设置页面为 `/identity/settings`，MCP 仪表盘为 `/identity/mcp`。端口只绑定本机回环地址；可在 `.env` 中设置 `PI_PORT`、`PI_MCP_PORT` 和 `PI_MCP_TEST_PORT` 避免冲突。USER 与 PITEST 使用独立存储。重复执行初始化会保留本安装的数据和已有凭据。
 
+**Production** 导航入口为 `/identity/production`，嵌入原生 `USER / PI.Production` 管理页。执行 `python3 scripts/configure-production.py --username <演示账号>`，在隐藏提示中输入密码即可配置固定演示登录。凭据保存在容器私有文件中，通过门户 URL 传递，已登录访问者可以查看这些参数。反向代理还需在同一域名下转发原生 `/csp/` 门户路径。
+
 默认 Compose 项目名为 `patient-identity-native`，默认 IRIS 容器名为 `pi-native-review`，与早期原型分开。若需要另一套隔离安装，请在启动前设置唯一的 `COMPOSE_PROJECT_NAME`、`PI_CONTAINER` 和三个可用端口。复用 Compose 项目名会复用其数据卷。
 
 正常运行时有三个长期容器：IRIS、共享来源 MCP 网关和只读发布网关。`init-durable` 是一次性权限初始化容器；`mcp-gateway-test` 仅在测试配置下运行。

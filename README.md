@@ -172,6 +172,8 @@ bash scripts/bootstrap.sh
 
 Open <http://127.0.0.1:52784/identity/> and sign in with an existing IRIS administrator account that has `%Admin_ConfigStore` and `%Admin_Wallet` permissions. Bootstrap disables the first-login password-change requirement for the local demo account `_SYSTEM`, preserving its existing password and roles; a fresh installation uses the loaded image's initial credentials. The settings page is `/identity/settings`, and the MCP dashboard is `/identity/mcp`. Ports are loopback-only; configure `PI_PORT`, `PI_MCP_PORT`, and `PI_MCP_TEST_PORT` in `.env` to avoid collisions. USER and PITEST have separate storage. Re-running bootstrap preserves this installation's data and existing credentials.
 
+The **Production** navigation item opens `/identity/production` and embeds the native `USER / PI.Production` portal. Configure its fixed demo login with `python3 scripts/configure-production.py --username <demo-user>` and enter the password at the prompt. Credentials are stored in a private container file and passed in the portal URL, so they are visible to signed-in visitors. A reverse proxy must also route the native `/csp/` portal paths on the same origin.
+
 The default Compose project is `patient-identity-native` and the default IRIS container is `pi-native-review`, separate from the earlier prototype. For another isolated installation, set a unique `COMPOSE_PROJECT_NAME`, `PI_CONTAINER` and three available port values before bootstrapping. Reusing a Compose project name reuses its volumes.
 
 Normal operation uses three long-running containers: IRIS, one shared source MCP gateway and the readonly publisher gateway. `init-durable` is a one-shot permissions initializer; `mcp-gateway-test` runs only with the test profile.
