@@ -53,6 +53,54 @@ ClassMethod InFlight()
     write "BUDGET_USD_INFLIGHT_OK",!
 }
 
+/// Refuse model investigations beyond the daily allowance and return counts when no model call started.
+ClassMethod DailyQuota()
+{
+    if $namespace'="PITEST" { throw ##class(%Exception.General).%New("TEST_SCOPE") }
+    kill ^PIBudget($namespace)
+    set view=##class(PI.Budget).DailySnapshot()
+    do ..Assert(view.callsUsed=0&&(view.callLimit=50),"a fresh day starts with the full 50-call allowance")
+    set used=0
+    for i=1:1:50 { set used=##class(PI.Budget).UseDailyCall() }
+    do ..Assert(used=50&&(##class(PI.Budget).DailySnapshot().callsUsed=50),"calls are counted atomically up to the daily limit")
+    set denied=0
+    try { do ##class(PI.Budget).UseDailyCall() } catch ex { set denied=(ex.Name="DAILY_CALL_LIMIT") }
+    do ..Assert(denied,"the fifty-first call on the same day is refused")
+    do ##class(PI.Budget).ReleaseDailyCall()
+    do ..Assert(##class(PI.Budget).DailySnapshot().callsUsed=49,"a released count returns quota when the model was never called")
+    kill ^PIBudget($namespace)
+    for i=1:1:49 { do ##class(PI.Budget).UseDailyCall() }
+    do ##class(PI.Budget).ReleaseDailyCall()
+    do ..Assert(##class(PI.Budget).DailySnapshot().callsUsed=48,"a released count decrements exactly one recorded call")
+    kill ^PIBudget($namespace)
+    do ##class(PI.Budget).ReleaseDailyCall()
+    do ..Assert(##class(PI.Budget).DailySnapshot().callsUsed=0,"releasing an unused allowance cannot drive the count negative")
+    kill ^PIBudget($namespace)
+    write "BUDGET_DAILY_QUOTA_OK",!
+}
+
+/// The stage timeline feeds the workbench progress modal without touching investigation locks.
+ClassMethod ProgressTimeline()
+{
+    if $namespace'="PITEST" { throw ##class(%Exception.General).%New("TEST_SCOPE") }
+    kill ^PIData($namespace,"progress","ctest"),^PIData($namespace,"progressRun","ctest")
+    do ##class(PI.Agent).MarkProgress("ctest",7,"quota","reserved")
+    set ^PIData($namespace,"progressRun","ctest")=7
+    do ##class(PI.Agent).MarkProgress("ctest",7,"model","reasoning")
+    set snap=##class(PI.Agent).ProgressSnapshot("ctest")
+    do ..Assert(snap.active=1&&(snap.runId=7)&&(snap.events.%Size()=2),"an in-flight run reports its live stage timeline")
+    do ..Assert(snap.events.%Get(0).stage="quota"&&(snap.events.%Get(1).stage="model"),"stage events keep chronological order")
+    kill ^PIData($namespace,"progressRun","ctest")
+    do ##class(PI.Agent).MarkProgress("ctest",7,"complete","LINK_REVIEW")
+    set snap=##class(PI.Agent).ProgressSnapshot("ctest")
+    do ..Assert(snap.active=0&&(snap.events.%Size()=3),"a finished run stays readable for a late modal but is inactive")
+    do ..Assert(snap.dailyCalls.callLimit=50,"the snapshot carries the daily allowance for the modal header")
+    set snap=##class(PI.Agent).ProgressSnapshot("cmissing")
+    do ..Assert(snap.active=0&&(snap.events.%Size()=0),"an unknown case reports an empty timeline without failing")
+    kill ^PIData($namespace,"progress","ctest"),^PIData($namespace,"progressRun","ctest")
+    write "AGENT_PROGRESS_OK",!
+}
+
 /// Unknown usage remains charged conservatively without increasing the original authorization ceiling.
 ClassMethod UnknownUsage()
 {

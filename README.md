@@ -138,6 +138,7 @@ The MCP dashboard displays bounded observations from recorded calls and the Prod
 - `%AI.ToolMgr` and authorization policies constrain tools to the current case, source version and run.
 - Native embeddings, vector store and knowledge base retrieve synthetic governance rules with evidence provenance.
 - Embedded Python adds supporting name-similarity evidence during candidate comparison; exact identifier conflicts still prohibit association. Readonly views replay the persisted result.
+- Daily AI call limit of 50 per calendar day (server-local time).
 - Native Workflow Engine tasks pass through Production, with explicit reviewer membership, task claiming, snapshot checks and recoverable post-commit completion.
 - Config Store and Wallet manage model profiles and secrets; model and endpoint can be configured in the settings page.
 - IRIS-native MCP source tools verify source records and support idempotent enrichment requests. Separate USER and PITEST endpoints use distinct signing keys, a bearer credential and bounded capability scopes.

@@ -13,9 +13,11 @@ ClassMethod Record(tool As %String, outcome As %String, duration As %Numeric = 0
 {
     set id=$get(^PIData($namespace,"context",$job,"case"))
     if id="" { quit }
-    set n=$increment(^PIData($namespace,"seq","trace"))
-    set t={"traceId":(n),"caseId":(id),"caseVersion":($get(^PIData($namespace,"context",$job,"version"))),"runId":($get(^PIData($namespace,"context",$job,"runId"))),"tool":(tool),"outcome":(outcome),"durationMs":(duration),"code":(code),"time":($zdatetime($horolog,3))}
+    set n=$increment(^PIData($namespace,"seq","trace")),runId=+$get(^PIData($namespace,"context",$job,"runId"))
+    set t={"traceId":(n),"caseId":(id),"caseVersion":($get(^PIData($namespace,"context",$job,"version"))),"runId":(runId),"tool":(tool),"outcome":(outcome),"durationMs":(duration),"code":(code),"time":($zdatetime($horolog,3))}
     set ^PIData($namespace,"trace",id,n)=t.%ToJSON()
+    // Mirror live tool activity into the investigation progress timeline for the workbench modal.
+    if runId>0 { do ##class(PI.Agent).MarkProgress(id,runId,"tool",tool_" · "_outcome_$select(duration>0:" · "_duration_"ms",1:"")) }
 }
 
 /// Return at most the latest one hundred native tool events.

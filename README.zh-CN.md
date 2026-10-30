@@ -138,6 +138,7 @@ MCP 仪表盘展示有上限的历史调用观测和 Production 状态，不主�
 - `%AI.ToolMgr` 与授权策略：将工具调用限制在当前案例、来源版本和运行范围内。
 - 原生嵌入、向量存储与知识库：检索合成治理规则，并保留证据来源。
 - Config Store 与 Wallet：管理模型配置和密钥；可在设置页面配置模型和端点。
+- 每日 AI 调用次数上限为 50 次（以服务器本地时间为基准）。
 - IRIS 原生来源 MCP：验证来源记录并以幂等方式处理补全请求。USER 与 PITEST 使用独立端点、独立签名密钥、Bearer 凭据和受限能力范围。
 - 原生只读 MCP 发布服务：提供按案例授权的案例、证据和运行轨迹工具；工作台提供 MCP 仪表盘和 Token 管理。
 - 同步 `/identity-fhir/$process-message` 端点：接受本项目支持的 FHIR R4 消息 Bundle，包含 `MessageHeader` 和 `Patient`；返回 FHIR 消息响应，错误使用 `OperationOutcome`。这是限定范围的演示消息规范，不是完整的 FHIR 服务器。

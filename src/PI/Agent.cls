@@ -69,8 +69,13 @@ ClassMethod InvestigateLocked(caseId As %String) As %DynamicObject
     if (c.status="APPROVED")!(c.status="REJECTED") { quit ##class(PI.Policy).Deny("CASE_CLOSED") }
     if $system.Util.GetEnviron("PI_LIVE_ENABLED")'="1" { quit ##class(PI.Policy).Deny("MODEL_NOT_CONFIGURED") }
     if '##class(PI.ModelConfig).Public().configured { quit ##class(PI.Policy).Deny("MODEL_NOT_CONFIGURED") }
-    set reservation=..ReserveAvailable()
+    // Enforce the daily AI call allowance before any money is reserved; release the count if reservation fails.
+    do ##class(PI.Budget).UseDailyCall()
+    try { set reservation=..ReserveAvailable() } catch ex { do ##class(PI.Budget).ReleaseDailyCall() throw ex }
     set runId=$increment(^PIData($namespace,"seq","run")),start=$zh
+    kill ^PIData($namespace,"progress",caseId)
+    set ^PIData($namespace,"progressRun",caseId)=runId
+    do ..MarkProgress(caseId,runId,"quota","daily call allowance and budget reserved")
     job ..Worker(caseId,runId)
     set pid=$zchild
     for { quit:$data(^PIData($namespace,"work",runId))  quit:($zh-start)>..#DEADLINE  hang 0.1 }
@@ -88,8 +93,37 @@ ClassMethod InvestigateLocked(caseId As %String) As %DynamicObject
         set run={}.%FromJSON(^PIData($namespace,"run",caseId,runId)),stats=run.%Get("billingStats",{})
     }
     do ..Settle(reservation,stats,run.%Get("billingRates",{"input":2,"output":6}))
+    kill ^PIData($namespace,"progressRun",caseId)
+    do ..MarkProgress(caseId,runId,"complete",$select(result.%Get("error","")'="":result.%Get("error"),1:result.%Get("decision","")))
     if result.%Get("error","")'="" { quit result }
     quit ##class(PI.Policy).Validate(caseId,result,1,runId,1)
+}
+
+/// Append a live stage event so the workbench modal can follow a running worker without touching its locks.
+ClassMethod MarkProgress(caseId As %String, runId As %Integer, stage As %String, detail As %String = "")
+{
+    set seq=$increment(^PIData($namespace,"progress",caseId,runId,"seq"))
+    set ^PIData($namespace,"progress",caseId,runId,"event",seq)={"stage":(stage),"detail":(detail),"time":($zdatetime($horolog,3))}.%ToJSON()
+}
+
+/// Return the current or latest run's stage timeline for the case; reads only, never blocks an investigation.
+ClassMethod ProgressSnapshot(caseId As %String) As %DynamicObject
+{
+    set daily=##class(PI.Budget).DailySnapshot()
+    set runId=+$get(^PIData($namespace,"progressRun",caseId)),latest=0
+    if runId=0 {
+        // No run in flight; show the most recent finished run so a late modal still renders its timeline.
+        set n="" for { set n=$order(^PIData($namespace,"progress",caseId,n),-1) quit:n=""  if +n=n { set latest=+n quit } }
+        if latest=0 { quit {"active":0,"dailyCalls":(daily),"events":[]} }
+        set runId=latest
+    }
+    set events=[],n=""
+    for {
+        set n=$order(^PIData($namespace,"progress",caseId,runId,"event",n)) quit:n=""
+        do events.%Push({}.%FromJSON(^PIData($namespace,"progress",caseId,runId,"event",n)))
+        if events.%Size()=100 { quit }
+    }
+    quit {"active":(+$get(^PIData($namespace,"progressRun",caseId))=runId),"runId":(runId),"dailyCalls":(daily),"events":(events)}
 }
 
 /// Use the real AI Hub SDK with the user's configured compatible endpoint; never store keys in business records.
@@ -99,6 +133,7 @@ ClassMethod Worker(caseId As %String, runId As %Integer)
     try {
         do ##class(PI.Tools).Begin(caseId)
         set ^PIData($namespace,"context",$job,"runId")=runId
+        do ..MarkProgress(caseId,runId,"worker","agent worker started, binding native tool policies")
         set rates=##class(PI.ModelSettings).Pricing()
         set c=##class(PI.Store).Case(caseId),provider=##class(PI.ModelConfig).Provider(.model)
         set agent=##class(%AI.Agent).%New(provider),agent.Model=model
@@ -108,17 +143,21 @@ ClassMethod Worker(caseId As %String, runId As %Integer)
         if $system.Status.IsError(sc) { throw ##class(%Exception.General).%New("NATIVE_POLICY_BIND_FAILED") }
         set sc=agent.ToolManager.SetAuditPolicy(##class(PI.ToolAudit).%New())
         if $system.Status.IsError(sc) { throw ##class(%Exception.General).%New("NATIVE_POLICY_BIND_FAILED") }
+        do ..MarkProgress(caseId,runId,"session","opening AI Hub session · model "_model)
         set session=##class(PI.Sessions).Open(agent,c,.resumed,.reset),before=session.GetStats()
+        do ..MarkProgress(caseId,runId,"session",$select(resumed:"AI session resumed",1:"AI session created")_", checkpoint saved")
         set prompt={"caseId":(caseId),"caseVersion":(c.version),"sourceVersion":(c.incoming.sourceVersion),"policyVersion":($get(^PIGovernance($namespace,"version"))),"instruction":"Investigate the current snapshot using fresh tools. Prior evidence and recommendations are not current."}.%ToJSON()
         // Commit the native session and mapping first so termination can still recover the last confirmed checkpoint.
         do ##class(PI.Sessions).Save(c,session,"before-model")
         set sessionId=session.%Id()
         set modelStarted=1
+        do ..MarkProgress(caseId,runId,"model","model reasoning started (up to 8 native tool calls)")
         set response=agent.Chat(session,prompt),usage=response.Usage
         try { set d={}.%FromJSON(response.Content) } catch badJson {
             set response=agent.Chat(session,"Return the same result as one valid JSON object only. Do not call more tools."),usage=response.Usage
             set d={}.%FromJSON(response.Content)
         }
+        do ..MarkProgress(caseId,runId,"validate","agent decision received, validating against governance policy")
         set result=##class(PI.Policy).Validate(caseId,d,1,runId,1)
         do ##class(PI.Sessions).Save(c,session)
         set sessionId=session.%Id()

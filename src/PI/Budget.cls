@@ -1,6 +1,42 @@
 Class PI.Budget Extends %RegisteredObject
 {
 Parameter LIMITUSD = 3;
+/// Maximum number of AI model investigations allowed per calendar day (server local date).
+Parameter DAILYCALLLIMIT = 50;
+
+/// Count one AI model call against today's allowance; refuse when the daily limit is already reached.
+ClassMethod UseDailyCall() As %Integer
+{
+    set date=$zdate($horolog,8)
+    lock +^PIBudget($namespace,"lock"):3
+    if '$test { throw ##class(%Exception.General).%New("BUDGET_BUSY") }
+    set used=+$get(^PIBudget($namespace,"dailyCalls",date))
+    if used>=..#DAILYCALLLIMIT {
+        lock -^PIBudget($namespace,"lock")
+        throw ##class(%Exception.General).%New("DAILY_CALL_LIMIT")
+    }
+    set ^PIBudget($namespace,"dailyCalls",date)=used+1
+    lock -^PIBudget($namespace,"lock")
+    quit used+1
+}
+
+/// Return a counted call when the investigation never reached the model, so quota is not consumed by refusals.
+ClassMethod ReleaseDailyCall()
+{
+    set date=$zdate($horolog,8)
+    lock +^PIBudget($namespace,"lock"):3
+    if '$test { throw ##class(%Exception.General).%New("BUDGET_BUSY") }
+    set used=+$get(^PIBudget($namespace,"dailyCalls",date))
+    if used>0 { set ^PIBudget($namespace,"dailyCalls",date)=used-1 }
+    lock -^PIBudget($namespace,"lock")
+}
+
+/// Report today's AI call usage for health displays and the investigation modal.
+ClassMethod DailySnapshot() As %DynamicObject
+{
+    set date=$zdate($horolog,8),used=+$get(^PIBudget($namespace,"dailyCalls",date))
+    quit {"date":(date),"callsUsed":(used),"callLimit":(..#DAILYCALLLIMIT)}
+}
 
 /// Convert the legacy planning ledger once at its historical 10:1 coefficient, without increasing spending authorization.
 ClassMethod EnsureUsd()

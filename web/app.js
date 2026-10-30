@@ -63,7 +63,8 @@ async function run(button, task) {
 async function refresh() {
   const health = await api("/health");
   $("connection").textContent = `IRIS build 154 · Production ${health.productionRunning ? "running" : "stopped"} · Source MCP ${health.mcp?.status || "NOT_CHECKED"} · ${health.liveEnabled && health.modelConfig?.configured ? "Live model configured" : "Manual fallback"}`;
-  $("budget").textContent = `${health.model || "No model"} · Estimate US$${Number(health.knownEstimateUsd ?? health.estimatedUsd ?? 0).toFixed(6)} + unknown usage allowance US$${Number(health.unknownUsageUsd || 0).toFixed(2)} + in flight US$${Number(health.reservedUsd || 0).toFixed(2)} / US$${Number(health.budgetUsd ?? 3).toFixed(2)}`;
+  const daily = health.dailyCalls;
+  $("budget").textContent = `${health.model || "No model"} · Estimate US$${Number(health.knownEstimateUsd ?? health.estimatedUsd ?? 0).toFixed(6)} + unknown usage allowance US$${Number(health.unknownUsageUsd || 0).toFixed(2)} + in flight US$${Number(health.reservedUsd || 0).toFixed(2)} / US$${Number(health.budgetUsd ?? 3).toFixed(2)}${daily ? ` · AI calls today ${daily.callsUsed}/${daily.callLimit}` : ""}`;
   const cases = await api("/cases");
   $("count").textContent = cases.length;
   $("cases").replaceChildren();
@@ -98,6 +99,96 @@ function trace(title, data) {
   return d;
 }
 
+/** Fixed investigation pipeline rendered in the modal; keys match the PI.Agent progress stages. */
+const flowStages = [["quota","Quota & budget check"],["worker","Start agent worker"],["session","Open AI Hub session"],["model","Model reasoning · native tools"],["validate","Policy validation"],["complete","Route to human review"]];
+
+/** Open a modal that follows the live investigation: pipeline flowchart, stage log and daily AI call allowance. */
+function openProgressModal(id) {
+  const overlay = node("div", null, "modal-overlay");
+  const modal = node("div", null, "modal");
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-label", "AI Hub investigation progress");
+  const head = node("div", null, "modal-head");
+  head.append(node("h3", `AI Hub investigation · ${id.toUpperCase()}`));
+  const close = node("button", "Close", "secondary");
+  head.append(close);
+  const flow = node("ol", null, "flow");
+  const steps = flowStages.map(([key, label]) => {
+    const li = node("li", null, "flow-step pending");
+    li.dataset.stage = key;
+    li.append(node("span", null, "flow-dot"), node("span", label, "flow-label"));
+    flow.append(li);
+    return li;
+  });
+  const meta = node("p", "Starting investigation…", "modal-meta");
+  meta.setAttribute("role", "status");
+  meta.setAttribute("aria-live", "polite");
+  const log = node("ul", null, "modal-log");
+  log.setAttribute("aria-label", "Investigation events");
+  modal.append(head, flow, meta, log);
+  overlay.append(modal);
+  document.body.append(overlay);
+
+  const stageIndex = Object.fromEntries(flowStages.map(([key], i) => [key, i]));
+  const startedAt = Date.now();
+  let closed = false, timer = 0, rendered = 0;
+
+  const paint = progress => {
+    const events = progress?.events || [];
+    let active = -1;
+    for (const e of events) {
+      const i = e.stage === "tool" ? stageIndex.model : stageIndex[e.stage];
+      if (i !== undefined && i > active) active = i;
+    }
+    const finished = events.at(-1)?.stage === "complete";
+    steps.forEach((li, i) => {
+      li.className = "flow-step " + (finished || i < active ? "done" : i === active ? "active" : "pending");
+    });
+    while (rendered < events.length) {
+      const e = events[rendered++];
+      const li = node("li");
+      li.append(node("span", (e.time || "").split(" ").at(-1), "log-time"), node("span", e.stage, "log-stage"), node("span", e.detail || ""));
+      log.append(li);
+    }
+    log.scrollTop = log.scrollHeight;
+    const daily = progress?.dailyCalls;
+    const elapsed = Math.round((Date.now() - startedAt) / 1000);
+    meta.textContent = `${finished ? "Completed" : "Running"} · stage ${events.at(-1)?.stage || "starting"} · ${elapsed}s elapsed${daily ? ` · AI calls today ${daily.callsUsed}/${daily.callLimit}` : ""}`;
+  };
+
+  const stop = () => { if (timer) { clearInterval(timer); timer = 0; } };
+  const poll = async () => { try { paint(await api(`/cases/${id}/progress`)); } catch { /* keep waiting while the POST is in flight */ } };
+  const dismiss = () => { closed = true; stop(); overlay.remove(); };
+  close.addEventListener("click", dismiss);
+  overlay.addEventListener("click", event => { if (event.target === overlay) dismiss(); });
+  timer = setInterval(poll, 900);
+  poll();
+
+  return {
+    /** Show the routed decision after the server POST completes, then take one final progress reading. */
+    async finish(result) {
+      if (closed) return;
+      stop();
+      try { paint(await api(`/cases/${id}/progress`)); } catch { /* final paint is best effort */ }
+      const error = result?.result?.error;
+      meta.className = "modal-meta " + (error ? "bad" : "ok");
+      meta.textContent = error ? `Escalated to manual review · ${error}` : `Investigation complete · routed to ${labels[result?.status] || result?.status || "review"}`;
+      close.textContent = "Done";
+    },
+    /** Surface refusals such as the daily call allowance without pretending the run reached the model. */
+    fail(message) {
+      if (closed) return;
+      stop();
+      const failed = steps.find(li => li.classList.contains("active")) || steps[0];
+      failed.className = "flow-step error";
+      meta.className = "modal-meta bad";
+      meta.textContent = message === "DAILY_CALL_LIMIT" ? "Daily AI call limit reached (50 calls per day). The allowance resets at midnight server time." : `Investigation refused · ${message}`;
+      close.textContent = "Done";
+    }
+  };
+}
+
 /** Submit human decisions against the current version; the server revalidates actions from stale pages. */
 async function decide(snapshot, action, candidateId, reason) {
   await api(`/cases/${snapshot.id}/review`, {version:snapshot.version, action, candidateId, reason});
@@ -117,7 +208,24 @@ async function showCase(id) {
   heading.append(node("p", `${c.id.toUpperCase()} / IDENTITY INVESTIGATION`, "eyebrow"), node("h2", c.incoming.name));
   const investigate = node("button", "Investigate with AI Hub");
   investigate.disabled = ["APPROVED","REJECTED"].includes(c.status);
-  investigate.addEventListener("click", () => run(investigate, async () => {await api(`/cases/${id}/investigate`, {}); await refresh();}));
+  investigate.addEventListener("click", async () => {
+    investigate.disabled = true;
+    const before = investigate.textContent;
+    investigate.textContent = "Working…";
+    $("notice").textContent = "";
+    const modal = openProgressModal(id);
+    try {
+      const result = await api(`/cases/${id}/investigate`, {});
+      await modal.finish(result);
+      await refresh();
+    } catch (error) {
+      modal.fail(error.message);
+      $("notice").textContent = error.message;
+    } finally {
+      investigate.disabled = false;
+      investigate.textContent = before;
+    }
+  });
   header.append(heading, investigate);
   root.append(header, node("p", `${labels[c.status] || c.status} · Source version ${c.incoming.sourceVersion} · ${c.correlationId} · Mode: ${c.mode}`, "case-subtitle"));
   if (c.baseline) root.append(node("p", `Rule baseline: ${labels[c.baseline.decision] || c.baseline.decision} — ${c.baseline.reason}`, "muted small"));

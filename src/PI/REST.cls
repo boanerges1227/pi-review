@@ -45,6 +45,7 @@ XData UrlMap
   <Route Url="/intake" Method="POST" Call="Intake"/>
   <Route Url="/demo" Method="POST" Call="Demo"/>
   <Route Url="/cases/:id/investigate" Method="POST" Call="Investigate"/>
+  <Route Url="/cases/:id/progress" Method="GET" Call="RunProgress"/>
   <Route Url="/cases/:id/enrichment" Method="POST" Call="FetchEnrichment"/>
   <Route Url="/cases/:id/review" Method="POST" Call="Review"/>
   <Route Url="/cases/:id/claim" Method="POST" Call="ClaimReview"/>
@@ -105,6 +106,7 @@ ClassMethod Health() As %Status
     set running=##class(Ens.Director).IsProductionRunning()
     try { set data=##class(PI.Budget).Snapshot() } catch ex { return ..RespondError(ex.Name) }
     set data.version=$zversion,data.aiHubAvailable=##class(%Dictionary.ClassDefinition).%ExistsId("%AI.Agent"),data.productionRunning=running,data.liveEnabled=($system.Util.GetEnviron("PI_LIVE_ENABLED")="1")
+    set data.dailyCalls=##class(PI.Budget).DailySnapshot()
     set data.modelConfig=##class(PI.ModelConfig).Public(),data.model=data.modelConfig.model
     set data.mcp=$select($data(^PIData($namespace,"mcpHealth")):{}.%FromJSON($get(^PIData($namespace,"mcpHealth"))),1:{"status":"NOT_CHECKED","server":"synthetic-source"})
     write data.%ToJSON()
@@ -138,13 +140,14 @@ ClassMethod RespondError(code As %String) As %Status
     if (code="ADMIN_AUTHENTICATION_REQUIRED")!(code="ADMIN_LOGIN_FAILED") { set status=401 }
     if code="ADMIN_NEW_SESSION_REQUIRED" { set status=409 }
     if code="ADMIN_PERMISSION_REQUIRED" { set status=403 }
+    if code="DAILY_CALL_LIMIT" { set status=429 }
     if (code="BUSY")!(code="PRODUCTION_UNAVAILABLE") { set status=503 }
     if code="PRODUCTION_PORTAL_NOT_CONFIGURED" { set status=503 }
     if code="VISIT_STATS_UNAVAILABLE" { set status=503 }
     if (code="BUDGET_BUSY")!(code="BUDGET_MIGRATION_BUSY") { set status=503 }
     if code="BUDGET_CURRENCY_INVALID" { set status=500 }
     if $extract(code,1)="<" { set status=500,code="INTERNAL_ERROR" }
-    set %response.Status=status_" "_$select(status=400:"Bad Request",status=401:"Unauthorized",status=403:"Forbidden",status=404:"Not Found",status=409:"Conflict",status=503:"Service Unavailable",1:"Internal Server Error")
+    set %response.Status=status_" "_$select(status=400:"Bad Request",status=401:"Unauthorized",status=403:"Forbidden",status=404:"Not Found",status=409:"Conflict",status=429:"Too Many Requests",status=503:"Service Unavailable",1:"Internal Server Error")
     quit ..Json({"code":(code)})
 }
 
@@ -208,10 +211,17 @@ ClassMethod FetchEnrichment(id As %String) As %Status
     quit ..Json(result)
 }
 
-/// Explicitly trigger a real model investigation within the persisted budget.
+/// Explicitly trigger a real model investigation within the persisted budget and daily call allowance.
 ClassMethod Investigate(id As %String) As %Status
 {
     try { set body=..Body(),result=..Submit({"action":"investigate","caseId":(id)}) } catch ex { return ..RespondError(ex.Name) }
+    quit ..Json(result)
+}
+
+/// Read-only live stage timeline for the investigation progress modal; never starts or alters a run.
+ClassMethod RunProgress(id As %String) As %Status
+{
+    try { set result=##class(PI.Agent).ProgressSnapshot(id) } catch ex { return ..RespondError(ex.Name) }
     quit ..Json(result)
 }
 
