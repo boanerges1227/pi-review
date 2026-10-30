@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="PI Review logo">
+  <rect width="64" height="64" rx="14" fill="#122d31"/>
+  <!-- Second identity (behind, muted teal): the conflicting record -->
+  <circle cx="40" cy="21" r="7" fill="#5d8f81"/>
+  <path d="M28 44a12 12 0 0 1 24 0z" fill="#5d8f81"/>
+  <!-- First identity (front, green): the record under review -->
+  <circle cx="24" cy="21" r="7" fill="#b6df91"/>
+  <path d="M12 44a12 12 0 0 1 24 0z" fill="#b6df91"/>
+  <!-- Human review verdict badge -->
+  <circle cx="47" cy="47" r="12" fill="#b6df91" stroke="#122d31" stroke-width="3"/>
+  <path d="M41.5 47l4 4 7.5-8.5" fill="none" stroke="#122d31" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

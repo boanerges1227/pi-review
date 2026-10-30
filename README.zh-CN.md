@@ -1,5 +1,12 @@
 # PI Review
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-full-dark.png">
+    <img src="docs/assets/logo-full-light.png" width="420" alt="PI Review logo">
+  </picture>
+</p>
+
 全称：Patient Identity Conflict Review Assistant（患者身份冲突审核助手）
 
 [English](README.md) | 简体中文

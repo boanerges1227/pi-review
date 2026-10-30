@@ -1,5 +1,12 @@
 # PI Review
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-full-dark.png">
+    <img src="docs/assets/logo-full-light.png" width="420" alt="PI Review logo">
+  </picture>
+</p>
+
 English | [简体中文](README.zh-CN.md)
 
 [![IRIS Contest](https://img.shields.io/badge/IRIS-Contest-blue)](https://openexchange.intersystems.com/contest/49)

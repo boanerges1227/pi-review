@@ -38,6 +38,8 @@ XData UrlMap
   <Route Url="/settings.js" Method="GET" Call="SettingsScript"/>
   <Route Url="/model-settings" Method="GET" Call="ModelSettings"/>
   <Route Url="/style.css" Method="GET" Call="Style"/>
+  <Route Url="/logo.svg" Method="GET" Call="Logo"/>
+  <Route Url="/logo-full.svg" Method="GET" Call="LogoFull"/>
   <Route Url="/cases" Method="GET" Call="Cases"/>
   <Route Url="/cases/:id" Method="GET" Call="Detail"/>
   <Route Url="/intake" Method="POST" Call="Intake"/>
@@ -58,7 +60,7 @@ ClassMethod OnPreDispatch(pUrl As %String, pMethod As %String, ByRef pContinue A
     set pContinue=1,path=pUrl
     if $extract(path,1)'="/" { set path="/"_path }
     // Expose only login, session endpoints and fixed static assets; protect business JSON, writes and admin data.
-    set public=$listfromstring("/login,/logout,/session,/visit-stats,/login.js,/login.css,/admin-session.js,/style.css,/app.js,/settings.js,/mcp.js,/mcp.css,/mcp-tokens.js,/mcp-tokens.css,/production.js,/production.css")
+    set public=$listfromstring("/login,/logout,/session,/visit-stats,/login.js,/login.css,/admin-session.js,/style.css,/app.js,/settings.js,/mcp.js,/mcp.css,/mcp-tokens.js,/mcp-tokens.css,/production.js,/production.css,/logo.svg,/logo-full.svg")
     if '$listfind(public,path) {
         set state=##class(PI.AdminSession).Current()
         if 'state.authenticated {
@@ -292,6 +294,10 @@ ClassMethod ProductionStyle() As %Status { quit ..Asset("production.css","text/c
 ClassMethod Script() As %Status { quit ..Asset("app.js","application/javascript") }
 /// Workbench stylesheet.
 ClassMethod Style() As %Status { quit ..Asset("style.css","text/css") }
+/// Serve the brand icon used by the header mark and favicon from a fixed file.
+ClassMethod Logo() As %Status { quit ..Asset("logo.svg","image/svg+xml") }
+/// Serve the horizontal brand lockup for documentation from a fixed file.
+ClassMethod LogoFull() As %Status { quit ..Asset("logo-full.svg","image/svg+xml") }
 /// Reuse the workbench CSP and fixed resource mapping for the separate settings page.
 ClassMethod Settings() As %Status { quit ..Asset("settings.html","text/html; charset=utf-8") }
 /// Serve the settings script from a fixed file; the browser cannot supply a path.

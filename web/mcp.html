@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>MCP Dashboard · Identity Review</title>
+  <link rel="icon" type="image/svg+xml" href="/identity/logo.svg">
   <link rel="stylesheet" href="/identity/style.css"><link rel="stylesheet" href="/identity/mcp.css"><script defer src="/identity/admin-session.js"></script><script defer src="/identity/mcp.js"></script>
 </head>
 <body class="mcp-page">
-  <header><a href="/identity/" class="brand"><span class="mark">i</span> IDENTITY<span class="brand-light"> / REVIEW</span></a><nav class="main-nav" aria-label="Main navigation"><a href="/identity/">Workbench</a><a href="/identity/mcp" aria-current="page">MCP Dashboard</a><a href="/identity/mcp-tokens">MCP Tokens</a><a href="/identity/settings">AI settings</a><a href="/identity/production">Production</a></nav><span class="platform">Powered by INTERSYSTEMS IRIS · AI HUB</span><div class="admin-session-controls"><span id="admin-user">Checking session…</span><a id="admin-login" href="/identity/login">Sign in</a><button id="admin-logout" type="button" class="secondary" hidden>Sign out</button></div></header>
+  <header><a href="/identity/" class="brand"><img class="mark" src="/identity/logo.svg" alt="" width="30" height="30"> IDENTITY<span class="brand-light"> / REVIEW</span></a><nav class="main-nav" aria-label="Main navigation"><a href="/identity/">Workbench</a><a href="/identity/mcp" aria-current="page">MCP Dashboard</a><a href="/identity/mcp-tokens">MCP Tokens</a><a href="/identity/settings">AI settings</a><a href="/identity/production">Production</a></nav><span class="platform">Powered by INTERSYSTEMS IRIS · AI HUB</span><div class="admin-session-controls"><span id="admin-user">Checking session…</span><a id="admin-login" href="/identity/login">Sign in</a><button id="admin-logout" type="button" class="secondary" hidden>Sign out</button></div></header>
   <main class="mcp-main">
     <section class="mcp-hero"><div><p class="eyebrow">INTEROPERABILITY OBSERVABILITY</p><h1>MCP, in view.</h1><p class="intro">Follow every connection. Inspect the evidence. See what needs attention.</p></div><div class="mcp-controls"><button id="dashboard-refresh">Refresh data <span aria-hidden="true">↻</span></button><label class="auto-control"><input type="checkbox" id="auto-refresh" checked> Auto refresh · 15s</label></div></section>
     <div class="mcp-snapshot"><span id="snapshot-status">Loading recorded telemetry…</span><span id="refresh-state">Read-only · no model calls</span></div>
