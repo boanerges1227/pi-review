@@ -13,6 +13,7 @@ ClassMethod CompareNames(left As %String, right As %String) As %DynamicObject
         set result={}.%FromJSON(response.Payload)
         if result.%IsDefined("code") { throw ##class(%Exception.General).%New("PEX_NAME_UNAVAILABLE") }
         if (result.%Get("transport","")'="pex")!(result.%Get("algorithmVersion","")'="name-v1") { throw ##class(%Exception.General).%New("PEX_NAME_UNAVAILABLE") }
+        if result.%Get("implementation","")'="java" { throw ##class(%Exception.General).%New("PEX_NAME_UNAVAILABLE") }
         if (result.%GetTypeOf("score")'="number")!(result.%GetTypeOf("comparable")'="boolean") { throw ##class(%Exception.General).%New("PEX_NAME_UNAVAILABLE") }
         if (result.score<0)!(result.score>1) { throw ##class(%Exception.General).%New("PEX_NAME_UNAVAILABLE") }
     } catch ex { throw ##class(%Exception.General).%New("PEX_NAME_UNAVAILABLE") }

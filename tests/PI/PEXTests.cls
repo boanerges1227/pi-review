@@ -1,6 +1,6 @@
 Class PI.PEXTests Extends PI.Tests
 {
-/// Exercise the actual Python PEX Production operation, including Unicode and bounded failure responses.
+/// Exercise the actual Java PEX Production operation, including Unicode and bounded failure responses.
 ClassMethod Run()
 {
     if $namespace'="PITEST" { throw ##class(%Exception.General).%New("TEST_SCOPE") }
@@ -13,6 +13,7 @@ ClassMethod Run()
     set result=##class(PI.PEX.Client).CompareNames("  ANNA   SMITH ","anna smith")
     do ..Assert(result.comparable&&(result.score=1),"PEX preserves case and whitespace normalization")
     do ..Assert(result.transport="pex"&&(result.algorithmVersion="name-v1"),"the response comes from the registered PEX operation")
+    do ..Assert(result.implementation="java","the actual Production operation runs Java")
     set result=##class(PI.PEX.Client).CompareNames($char(65313,65326,65326,65313),"anna")
     do ..Assert(result.score=1,"PEX normalizes Unicode compatibility characters")
     set result=##class(PI.PEX.Client).CompareNames("Anna","Ana")

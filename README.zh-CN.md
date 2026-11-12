@@ -106,7 +106,7 @@ flowchart LR
     API --> PROD["PI.Production：Intake → IdentityProcess"]
     PROD --> STORE["IRIS 记录、案例与审计"]
     PROD --> AGENT["AI Hub Agent + ToolMgr"]
-    AGENT --> PEX["Python PEX: NameSimilarityPEX"]
+    AGENT --> PEX["Java PEX: NameSimilarityPEX"]
     AGENT --> KB["治理知识库"]
     AGENT --> SOURCE["原生来源 MCP 网关"]
     PROD --> SOURCE
@@ -143,10 +143,10 @@ MCP 仪表盘展示有上限的历史调用观测和 Production 状态，不主�
 - IRIS 原生来源 MCP：验证来源记录并以幂等方式处理补全请求。USER 与 PITEST 使用独立端点、独立签名密钥、Bearer 凭据和受限能力范围。
 - 原生只读 MCP 发布服务：提供按案例授权的案例、证据和运行轨迹工具；工作台提供 MCP 仪表盘和 Token 管理。
 - 同步 `/identity-fhir/$process-message` 端点：接受本项目支持的 FHIR R4 消息 Bundle，包含 `MessageHeader` 和 `Patient`；返回 FHIR 消息响应，错误使用 `OperationOutcome`。这是限定范围的演示消息规范，不是完整的 FHIR 服务器。
-- Python **PEX Business Operation** `NameSimilarityPEX` 在候选比较工具中生成姓名相似度辅助证据。现有 `name-v1` 算法通过内置 Python Server 和注册的 `EnsLib.PEX.BusinessOperation` 代理执行；不同标识符仍禁止关联，只读页面重放已保存的结果。原 Embedded Python 方法保留供直接比较及一致性测试使用。
+- Java **PEX Business Operation** `NameSimilarityPEX` 在候选比较工具中生成姓名相似度辅助证据。现有 `name-v1` 算法通过内置 Java Server 和注册的 `EnsLib.PEX.BusinessOperation` 代理执行；不同标识符仍禁止关联，只读页面重放已保存的结果。原 Embedded Python 方法保留供直接比较及一致性测试使用。
 - 原生 Workflow Engine 任务通过 Production 分发，支持明确的审核成员关系、领取、快照复核及提交后的任务完成恢复。
 
-初始化及 IPM 包启动时会自动执行 `PI.PEX.Setup.Install` 注册组件。`python/pi_pex.py` 随 IPM 资源安装，安装后运行不依赖源码目录。Python Server 位于 IRIS 实例内部，无需新增公网端口。资源缺失、响应无效或 PEX 不可用时会明确失败，不会静默回退。运行 `bash scripts/test.sh` 可验证真实 Production 到 PEX 的消息、输入边界、Unicode 规范化及失败处理。 更新已安装的 Python 代码时，应先停止相应 Production，重启其 IRIS 容器以清除 Python Server 的模块缓存，再执行初始化；仅重新注册不会刷新已创建的 Python 对象。
+初始化及 IPM 包启动时会自动执行 `PI.PEX.Setup.Install` 编译并注册 Java 组件。`java/` 源码和构建脚本随 IPM 安装，运行不依赖源码目录。支持镜像内置 JDK 11 及匹配的 InterSystems PEX/JDBC SDK；构建从 Maven Central 下载 ICU4J 72.1 并验证固定 SHA-256，以 Unicode 15 NFKC 和完整 casefold 保持原规范化结果。编译产物写入持久 manager 目录的 `pi-review/java-build/`；离线安装可预置已验证的 ICU jar 到其 `lib/` 子目录。Java Server 位于 IRIS 实例内部，无需新增公网端口。资源缺失、响应无效或 PEX 不可用时明确失败，不会静默回退。响应保留 `algorithmVersion=name-v1`、`transport=pex` 并增加 `implementation=java`。`bash scripts/test.sh` 验证真实 Production 调用；在独立容器中构建到 `/tmp/pi-java-pex` 后，可用 `PI_JAVA_PEX_CONTAINER=pi-java-pex-<隔离实例> python3 -m unittest discover -s tests -p test_java_pex.py -v` 对照原 Python 评分。替换已加载的 Java jar 时，应停止受影响 Production 并重启其 Java 外部语言服务器后重新注册；存在其他使用者时不要直接重启共享服务器。此前的 Python PEX 模块已移除，原 Embedded Python 比较器仅保留供显式对照测试。
 
 FHIR 操作要求 `application/fhir+json` 和本地写入请求头 `X-Identity-Review: local-demo`。消息包含一个被 focus 引用的 `Patient`、`patient-upsert` 事件，Bundle 最多 20 个条目、大小不超过 64 KiB。支持的来源端点为 `urn:pi:source:HIS`、`urn:pi:source:EMR` 和 `urn:pi:source:CHECKUP`；如提供标识，其值须使用合成数据前缀 `SYN-`。操作为同步处理；不支持的字段或冲突的消息 ID 会被拒绝。完全相同的消息重试会返回已保存的响应。
 

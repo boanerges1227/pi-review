@@ -29,7 +29,7 @@ services:
       - ./data:/workspace/data:ro
       - ./tests:/workspace/tests:ro
       - ./web:/workspace/web:ro
-      - ./python:/workspace/python:ro
+      - ./java:/workspace/java:ro
       - pi-data:/durable
       - pi-source-secret:/source-secret
       - pi-gateway-secret:/gateway-secret

@@ -15,7 +15,7 @@ cleanup() {
 }
 trap cleanup EXIT
 cp module.xml LICENSE "$stage/"
-cp -R src web data python "$stage/"
+cp -R src web data java "$stage/"
 chmod -R a+rX "$stage"
 # Match deployed containers: Durable %SYS makes the installation tree read-only.
 image=${IRIS_IMAGE:-iris-community:2026.3.0AI.154.0}
