@@ -83,6 +83,13 @@ ClassMethod Provider(Output model As %String) As %AI.Provider
     set config=..Resolve(),model=config.%Get("model","")
     set adapter=config.%Get("model_provider","openai"),client={"api_key":(config.%Get("api_key","")),"http_config":{"request_timeout_secs":110,"connect_timeout_secs":10}}
     if adapter="openai" { set client."base_url"=config.%Get("base_url","") }
+    if $isobject($get(%PITraceScope)) {
+        set base=config.%Get("base_url","")
+        if base="",adapter="openai" { set base="https://api.openai.com/v1/" }
+        if base="",adapter="anthropic" { set base="https://api.anthropic.com/v1/" }
+        set observed=%PITraceScope.Configure(adapter,base,model)
+        if adapter'="google",adapter'="gemini" { set client."base_url"=observed }
+    }
     quit ##class(%AI.Provider).Create(adapter,client)
 }
 

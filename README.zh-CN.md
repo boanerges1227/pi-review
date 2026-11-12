@@ -1,5 +1,7 @@
 # PI Review
 
+实现 [DPI-I-689](https://ideas.intersystems.com/ideas/DPI-I-689)：使用原生 Interoperability 消息关联模型请求、工具审计、提示词版本、用量、耗时及既有 JSON 修复重试。参见[复现步骤、隐私边界、提供方覆盖范围及 Langfuse 对照](docs/traceability-689.md)。
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-full-dark.png">

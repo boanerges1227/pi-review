@@ -5,6 +5,14 @@ Method %LogExecution(call As %DynamicObject, metadata As %DynamicObject, result 
 {
     set outcome=$select($system.Status.IsOK(status):"ALLOWED",1:"FAILED")
     do ..Record(call.%Get("name",""),outcome,duration,$select(outcome="FAILED":"TOOL_EXECUTION_FAILED",1:""))
+    if $isobject($get(%PITraceScope)) { try { do %PITraceScope.Tool(call.%Get("name",""),duration,$system.Status.IsOK(status)) } catch traceError { set %PITraceScope.Failed=1 } }
+    quit 1
+}
+
+/// Buffer denied tool metadata without reentering Python from the native Rust callback.
+Method %LogDenial(call As %DynamicObject, metadata As %DynamicObject, status As %Status) As %Status
+{
+    if $isobject($get(%PITraceScope)) { try { do %PITraceScope.Tool(call.%Get("name",""),0,0,1) } catch traceError { set %PITraceScope.Failed=1 } }
     quit 1
 }
 

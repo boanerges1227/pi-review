@@ -1,5 +1,7 @@
 # PI Review
 
+Implements [DPI-I-689](https://ideas.intersystems.com/ideas/DPI-I-689): native AI investigation traces link actual model requests, tool audits, prompt versions, usage, timing and existing JSON repair to one Interoperability session. See [reproduction, privacy boundaries, provider coverage and Langfuse comparison](docs/traceability-689.md).
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-full-dark.png">

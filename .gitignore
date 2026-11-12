@@ -14,3 +14,4 @@ output/
 .playwright-cli/
 tests/production_page.test.cjs
 tests/production_http_acceptance.py
+/docs/superpowers/plans/
