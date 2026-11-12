@@ -3,7 +3,7 @@
 <Document name="pi-review.ZPM">
 <Module>
   <Name>pi-review</Name>
-  <Version>1.1.1</Version>
+  <Version>1.1.2</Version>
   <Description>Patient Identity Conflict Review Assistant. An InterSystems IRIS interoperability production in which an AI Hub agent investigates synthetic patient identity conflicts, gathers case-scoped source evidence through native MCP tools and a governance knowledge base, and recommends a route for human review. The reviewer keeps control of identity mappings; the agent cannot approve a merge.</Description>
   <Keywords>ai-hub,agent,interoperability,production,mcp,fhir,patient-identity,identity-resolution,empi,rag,vector</Keywords>
   <Author>
