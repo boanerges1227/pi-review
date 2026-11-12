@@ -53,6 +53,7 @@ ClassMethod Install()
     set sc=##class(%Library.EnsembleMgr).EnableNamespace("PITEST")
     if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) }
     set $namespace="USER"
+    do ##class(PI.PEX.Setup).Install()
     set sc=##class(Ens.Director).RecoverProduction()
     if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) }
     do ##class(PI.Governance).Install()

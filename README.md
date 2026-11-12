@@ -106,6 +106,7 @@ flowchart LR
     API --> PROD["PI.Production: Intake → IdentityProcess"]
     PROD --> STORE["IRIS records, cases and audit"]
     PROD --> AGENT["AI Hub Agent + ToolMgr"]
+    AGENT --> PEX["Python PEX: NameSimilarityPEX"]
     AGENT --> KB["Governance knowledge base"]
     AGENT --> SOURCE["Native source MCP gateway"]
     PROD --> SOURCE
@@ -137,13 +138,15 @@ The MCP dashboard displays bounded observations from recorded calls and the Prod
 - Native `%AI.Agent` and persistent sessions; the next investigation can resume a prior session with fresh case evidence.
 - `%AI.ToolMgr` and authorization policies constrain tools to the current case, source version and run.
 - Native embeddings, vector store and knowledge base retrieve synthetic governance rules with evidence provenance.
-- Embedded Python adds supporting name-similarity evidence during candidate comparison; exact identifier conflicts still prohibit association. Readonly views replay the persisted result.
+- A Python **PEX Business Operation**, `NameSimilarityPEX`, adds supporting name-similarity evidence during candidate comparison. The existing `name-v1` algorithm is executed through the built-in Python Server and a registered `EnsLib.PEX.BusinessOperation` proxy; exact identifier conflicts still prohibit association. Readonly views replay the persisted result. The original Embedded Python method remains available for direct comparison and parity tests.
 - Daily AI call limit of 50 per calendar day (server-local time).
 - Native Workflow Engine tasks pass through Production, with explicit reviewer membership, task claiming, snapshot checks and recoverable post-commit completion.
 - Config Store and Wallet manage model profiles and secrets; model and endpoint can be configured in the settings page.
 - IRIS-native MCP source tools verify source records and support idempotent enrichment requests. Separate USER and PITEST endpoints use distinct signing keys, a bearer credential and bounded capability scopes.
 - A second native MCP service publishes readonly case, evidence and run-trace tools with per-case access control. The workbench includes an MCP dashboard and token management.
 - The synchronous `/identity-fhir/$process-message` endpoint accepts the supported FHIR R4 message Bundle profile with `MessageHeader` and `Patient`, returns a FHIR message response, and uses `OperationOutcome` for errors. This is a focused demo profile, not a complete FHIR server.
+
+PEX registration runs automatically during bootstrap (`PI.PEX.Setup.Install`) and package startup. `python/pi_pex.py` is included in the IPM resources, so the installed application does not depend on a source checkout. The Python Server is internal to the IRIS instance; no extra public port is required. Missing resources, invalid replies or an unavailable PEX operation fail explicitly rather than silently falling back. Run `bash scripts/test.sh` to exercise real Production-to-PEX messages, input bounds, Unicode normalization and failure handling. When updating installed Python code, stop the affected Production, restart its IRIS container to clear Python Server imports, then run bootstrap again; registration alone does not reload already-created Python objects.
 
 The FHIR operation requires `application/fhir+json` and the local mutation header `X-Identity-Review: local-demo`. It accepts one focused `Patient`, the `patient-upsert` event and at most 20 Bundle entries within 64 KiB. Supported source endpoints are `urn:pi:source:HIS`, `urn:pi:source:EMR` and `urn:pi:source:CHECKUP`; supplied identifiers use the synthetic `SYN-` prefix. It is synchronous; unsupported fields or conflicting message IDs are rejected. Identical message retries return the stored response.
 

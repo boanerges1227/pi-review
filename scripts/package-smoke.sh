@@ -15,7 +15,7 @@ cleanup() {
 }
 trap cleanup EXIT
 cp module.xml LICENSE "$stage/"
-cp -R src web data "$stage/"
+cp -R src web data python "$stage/"
 chmod -R a+rX "$stage"
 # Match deployed containers: Durable %SYS makes the installation tree read-only.
 image=${IRIS_IMAGE:-iris-community:2026.3.0AI.154.0}
@@ -57,7 +57,7 @@ printf '%s\n' "$output"
 # The runtime check occurs after the temporary source package has been removed.
 docker exec --user 0 "$smoke_name" rm -rf /tmp/pi-review-package
 output=$(docker exec -i "$smoke_name" iris session IRIS -U USER <<'IRIS'
-try { set stream=##class(%Stream.FileCharacter).%New(),sc=stream.LinkToFile(##class(PI.InstallPaths).SourceRegistryPath()) if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) } set fixture={}.%FromJSON(stream) if fixture.%IsDefined("HIS:DEMO-HIS-001")=0 { throw ##class(%Exception.General).%New("FIXTURE_MISSING") } set page=##class(%Stream.FileCharacter).%New(),sc=page.LinkToFile(##class(PI.InstallPaths).WebRoot()_"index.html") if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) } if page.Read(1024)'["<!doctype html>" { throw ##class(%Exception.General).%New("WEB_MISSING") } write "PACKAGE_SMOKE_OK",! } catch ex { write "PACKAGE_SMOKE_FAILED_RUNTIME ",ex.Name,! }
+try { set stream=##class(%Stream.FileCharacter).%New(),sc=stream.LinkToFile(##class(PI.InstallPaths).SourceRegistryPath()) if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) } set fixture={}.%FromJSON(stream) if fixture.%IsDefined("HIS:DEMO-HIS-001")=0 { throw ##class(%Exception.General).%New("FIXTURE_MISSING") } set page=##class(%Stream.FileCharacter).%New(),sc=page.LinkToFile(##class(PI.InstallPaths).WebRoot()_"index.html") if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) } if page.Read(1024)'["<!doctype html>" { throw ##class(%Exception.General).%New("WEB_MISSING") } do ##class(PI.PEX.Setup).Install() set sc=$system.OBJ.Compile("PI.Production","ck") if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) } do ##class(PI.Workflow.Setup).Install("_SYSTEM") set sc=##class(Ens.Director).StartProduction("PI.Production") if $system.Status.IsError(sc) { throw ##class(%Exception.StatusException).CreateFromStatus(sc) } set similar=##class(PI.PEX.Client).CompareNames("ANNA","anna") if (similar.score'=1)!(similar.transport'="pex") { throw ##class(%Exception.General).%New("PACKAGE_PEX_FAILED") } write "PACKAGE_PEX_OK",! write "PACKAGE_SMOKE_OK",! } catch ex { write "PACKAGE_SMOKE_FAILED_RUNTIME ",ex.Name,! }
 halt
 IRIS
 )

@@ -34,6 +34,7 @@
   <!-- ManagerDirectory follows Durable %SYS; the installation lib directory is read-only there. -->
   <FileCopy Name="web/" Target="${mgrdir}pi-review/web/"/>
   <FileCopy Name="data/" Target="${mgrdir}pi-review/data/"/>
+  <FileCopy Name="python/" Target="${mgrdir}pi-review/python/"/>
   <Invoke Class="PI.PackageSetup" Method="Install" Phase="Activate" When="After" CheckStatus="true">
     <Arg>${mgrdir}pi-review/</Arg>
   </Invoke>
