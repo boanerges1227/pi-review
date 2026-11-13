@@ -61,18 +61,10 @@ ClassMethod Apply(caseId As %String, result As %DynamicObject) As %DynamicObject
     quit c
 }
 
-/// Deduplicate demo notifications by unique ID; failures must not roll back completed human decisions.
+/// Reopen an exhausted delivery for the asynchronous relay without changing the reviewed identity mapping.
 ClassMethod Notify(id As %String)
 {
-    lock +^PIData($namespace,"notifyLock",id):3
-    if '$test { throw ##class(%Exception.General).%New("BUSY") }
-    set n={}.%FromJSON(^PIData($namespace,"notification",id))
-    if n.status'="SENT" {
-        set n.attempts=n.attempts+1,n.status=$select(n.%Get("simulateFailure",0):"FAILED",1:"SENT")
-        set ^PIData($namespace,"notification",id)=n.%ToJSON()
-        do ##class(PI.Store).Audit(n.caseId,"NOTIFICATION_"_n.status,id)
-    }
-    lock -^PIData($namespace,"notifyLock",id)
+    do ##class(PI.Notification.Outbox).Retry(id)
 }
 
 /// Escalate enrichment to human review after five minutes; compare absolute times to handle midnight correctly.

@@ -78,7 +78,7 @@ flowchart TD
     M --> S
     R --> S
     S --> T["保存审核与审计，必要时更新映射"]
-    T --> U["模拟下游通知"]
+    T --> U["持久化回传事件 → Custom Outbound Adapter（可选启用）"]
     T -. "符合条件时可撤销" .-> V["恢复映射，案例返回冲突审核"]
 ```
 
@@ -115,7 +115,7 @@ flowchart LR
     SOURCE --> FIXTURE["IRIS 合成来源：版本化样例与回执"]
     API --> REVIEW["人工审核与映射"]
     REVIEW --> STORE
-    REVIEW --> NOTIFY["模拟下游通知"]
+    REVIEW --> NOTIFY["结果待发送事件 → Custom Outbound Adapter（可选启用）"]
     CLIENT["获授权的 MCP 客户端"] --> PUB["原生只读 MCP 发布服务"]
     PUB --> STORE
 ```
@@ -212,6 +212,18 @@ Production 配置为随 IRIS 自动启动。计划内重启可执行 `docker com
 如果初始 `local-reviewer` Token 已被撤销，初始化不会重新启用它。启动过程会显示 `PUBLISH_CLIENT_REVOKED`，此时只检查传输可达性；请在 MCP 设置中创建新 Token 并配置所需案例授权。将新 Token 和发布地址保存在单独的私有 JSON 配置中（字段为 `url` 和 `token`），再通过 `python3 scripts/mcp_client.py --config <private-config>` 指定该文件。初始化会重新生成初始的 `artifacts/mcp-client.json`，因此不要将替代 Token 保存到该文件。
 
 ## 验证
+
+### 审核结果回传
+
+可选启用的 [Custom Outbound Adapter](docs/identity-result-callback.zh-CN.md) 通过 Production 将已提交的审核和撤销结果发送到 HTTP 接收端，校验匹配回执，并通过固定事件 ID 实现有上限的重试。独立模拟 HIS 测试验证真实原生投递和接收端去重：
+
+```bash
+bash scripts/notification-smoke.sh
+```
+
+两个回传 Production 组件默认关闭，配置接收地址后启用。这项验证不连接真实医院。
+
+### 应用检查
 
 初始化完成后，下列检查使用合成数据，不调用付费模型：
 

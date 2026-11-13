@@ -18,6 +18,15 @@ XData ProductionDefinition
  <Item Name="WorkflowIntake" ClassName="PI.Workflow.Service" PoolSize="0" Enabled="true" Foreground="false"/>
  <Item Name="ReviewDispatch" ClassName="PI.Workflow.Dispatch" PoolSize="1" Enabled="true" Foreground="false"/>
  <Item Name="IdentityReview" ClassName="EnsLib.Workflow.Operation" PoolSize="1" Enabled="true" Foreground="false"/>
+ <Item Name="IdentityResultRelay" ClassName="PI.Notification.Relay" PoolSize="1" Enabled="false" Foreground="false">
+  <Setting Target="Adapter" Name="CallInterval">5</Setting>
+ </Item>
+ <Item Name="IdentityResultOutbound" ClassName="PI.Notification.Operation" PoolSize="1" Enabled="false" Foreground="false">
+  <Setting Target="Adapter" Name="ConnectTimeout">5</Setting>
+  <Setting Target="Adapter" Name="ResponseTimeout">10</Setting>
+  <Setting Target="Adapter" Name="WriteTimeout">5</Setting>
+  <Setting Target="Adapter" Name="URL">/identity-results</Setting>
+ </Item>
 </Production>
 }
 }

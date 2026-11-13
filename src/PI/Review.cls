@@ -3,6 +3,8 @@ Class PI.Review Extends %RegisteredObject
 /// Validate case and source snapshots under a transaction and lock; reject stale or duplicate human confirmations.
 ClassMethod Decide(caseId As %String, version As %Integer, action As %String, candidateId As %String, reason As %String, workflowTaskId As %String = "") As %DynamicObject
 {
+    // This method owns the commit boundary; nested callers could otherwise publish a rolled-back decision.
+    if $tlevel { throw ##class(%Exception.General).%New("REVIEW_TRANSACTION_UNSUPPORTED") }
     if ($length($zstrip(reason,"<>W"))<3)!($length(reason)>2000) { throw ##class(%Exception.General).%New("REASON_REQUIRED") }
     lock +^PIData($namespace,"lock"):3
     if '$test { throw ##class(%Exception.General).%New("BUSY") }
@@ -40,13 +42,14 @@ ClassMethod Decide(caseId As %String, version As %Integer, action As %String, ca
         throw ex
     }
     lock -^PIData($namespace,"lock")
-    do ##class(PI.Route).Notify(notification)
     quit c
 }
 
 /// Undo only the latest confirmation whose source version is unchanged; never physically delete original records.
 ClassMethod Undo(caseId As %String, version As %Integer, reason As %String) As %DynamicObject
 {
+    // Keep the review lock until the outermost commit before the relay can observe this correction.
+    if $tlevel { throw ##class(%Exception.General).%New("REVIEW_TRANSACTION_UNSUPPORTED") }
     if $length($zstrip(reason,"<>W"))<3 { throw ##class(%Exception.General).%New("REASON_REQUIRED") }
     lock +^PIData($namespace,"lock"):3
     if '$test { throw ##class(%Exception.General).%New("BUSY") }
@@ -66,15 +69,12 @@ ClassMethod Undo(caseId As %String, version As %Integer, reason As %String) As %
         throw ex
     }
     lock -^PIData($namespace,"lock")
-    do ##class(PI.Route).Notify(notification)
     quit c
 }
 
-/// Keep notifications outside the linking transaction so failures can be retried idempotently with the same ID.
+/// Save an immutable outbox event atomically with the review; Production performs delivery after commit.
 ClassMethod Notification(caseId As %String, masterId As %String, kind As %String) As %String
 {
-    set id="n"_$increment(^PIData($namespace,"seq","notification"))
-    set ^PIData($namespace,"notification",id)={"id":(id),"caseId":(caseId),"masterId":(masterId),"kind":(kind),"status":"PENDING","attempts":0,"simulated":true}.%ToJSON()
-    quit id
+    quit ##class(PI.Notification.Outbox).Create(caseId,masterId,kind)
 }
 }

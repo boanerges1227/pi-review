@@ -78,7 +78,7 @@ flowchart TD
     M --> S
     R --> S
     S --> T["Save review and update mapping when applicable"]
-    T --> U["Simulated downstream notification"]
+    T --> U["Durable result outbox → Custom Outbound Adapter (opt-in)"]
     T -. "Undo when eligible" .-> V["Restore mapping; return case to conflict review"]
 ```
 
@@ -115,7 +115,7 @@ flowchart LR
     SOURCE --> FIXTURE["IRIS synthetic source: versioned fixtures and receipts"]
     API --> REVIEW["Human review and mapping"]
     REVIEW --> STORE
-    REVIEW --> NOTIFY["Simulated notification"]
+    REVIEW --> NOTIFY["Result outbox → Custom Outbound Adapter (opt-in)"]
     CLIENT["Authorized MCP client"] --> PUB["Native readonly MCP publisher"]
     PUB --> STORE
 ```
@@ -212,6 +212,18 @@ The readonly publisher is available at `http://127.0.0.1:52785/mcp` by default. 
 If the initial local-reviewer token is revoked, bootstrap does not re-enable it. It reports `PUBLISH_CLIENT_REVOKED` and checks transport reachability only; create a new client token with the needed case grants in MCP settings. Save that token and publisher URL in a separate private JSON configuration (`url` and `token` fields), then pass its path using `python3 scripts/mcp_client.py --config <private-config>`. Bootstrap regenerates the initial `artifacts/mcp-client.json`, so it must not be used to store a replacement token.
 
 ## Verification
+
+### Review result callback
+
+The opt-in [Custom Outbound Adapter](docs/identity-result-callback.md) sends committed review and undo results through Production to an HTTP receiver, validates matching receipts, and provides bounded retries with stable event IDs. Its standalone synthetic HIS test verifies real native delivery and receiver deduplication:
+
+```bash
+bash scripts/notification-smoke.sh
+```
+
+Both callback Production items are disabled until a destination is configured. This validation does not connect to a real hospital.
+
+### Application checks
 
 After bootstrap, these checks use synthetic data and no paid model calls:
 
